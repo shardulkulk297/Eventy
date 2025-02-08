@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {Routes, Route} from 'react-router-dom'
-import Auth from './components/ui/Auth'
-import Register from './components/Register'
+import Auth from './components/Auth'
+import Posts from './components/Posts'
 import './App.css'
 
 function App() {
@@ -10,8 +10,8 @@ function App() {
   return (
     <>
       <Routes>
-        <Route index path='/auth' element={<Auth />} />
-        <Route index path='/register' element = {<Register />} />
+        <Route index path='/' element={<Auth />} />
+        <Route index path='/posts' element = {<Posts />} />
       </Routes>
     </>
   )
