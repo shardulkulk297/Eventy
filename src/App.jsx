@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import { Button } from './components/ui/button'
+import {Routes, Route} from 'react-router-dom'
+import Auth from './components/ui/Auth'
 
 import './App.css'
 
@@ -10,8 +9,9 @@ function App() {
 
   return (
     <>
-      <h1 className='text-2xl text-red-800'>Pokemon</h1>
-      <Button>Hello</Button>
+      <Routes>
+        <Route index path='/auth' element={<Auth />} />
+      </Routes>
     </>
   )
 }
