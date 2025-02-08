@@ -143,7 +143,7 @@ export function LoginForm() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="username or email"
+                  placeholder="Enter your email"
                   value={registerData.email}
                   onChange={() => handleChange(e, setRegisterData)}
                   required
