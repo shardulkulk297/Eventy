@@ -3,23 +3,52 @@ import { Input } from "./input";
 import { Button } from "./button";
 import { Label } from "./label";
 import { Link } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel
+} from "./select";
 
 export function LoginForm() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [registerData, setRegisterData] = useState({
+    name: "",
+    displayName: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
+    role: "",
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  })
+  const [activeTab, setActiveTab] = useState("login")
+
+  const handleChange = (e, setData) => {
+    const { name, value } = e.target;
+    setData((prev)=> ({...prev, [name]: value}))
   };
 
-  const handleSubmit = (e) => {
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab)
+  }
+
+  const handleLoginSubmit = (e) => {
     e.preventDefault();
-    console.log("Login Data:", formData);
+    console.log("Login Data:", loginData);
   };
+
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+
+  }
 
   return (
     <div className="flex h-screen w-screen">
 
-<div
+      <div
         className="w-1/2 h-full bg-cover bg-center"
         style={{
           backgroundImage:
@@ -29,37 +58,157 @@ export function LoginForm() {
       <div className="w-1/2 flex justify-center items-center bg-gray-50">
         <div className="max-w-sm w-full mx-auto p-6 bg-white shadow-lg rounded-lg ">
           <h1 className="text-4xl text-center font-bold p-1" >Welcome to Eventy</h1>
-          <h2 className="text-2xl font-semibold text-center mb-4 mt-4">Login</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <p>Don't have an account? <Link to="/register" className="font-bold"> Register Here</Link></p>
-            <Button type="submit" className="w-full bg-blue-600 text-white">
+          <p className="text-center text-black mb-4 mt-2">
+            <i>Connect, Engage & Explore</i>
+          </p>
+
+          <div className="flex justify-center mb-6">
+
+            <button onClick={() => {
+              handleTabSwitch("login");
+
+            }}
+              className={`px-4 py-2 mr-1 rounded-xl ${activeTab == "login" ? "bg-blue-500 text-white"
+                : " bg-gray-100 text-gray-700"
+                }rounded-l-lg `}
+            >
               Login
-            </Button>
-          </form>
+            </button>
+
+            <button onClick={() => {
+              handleTabSwitch("register")
+            }} className={`px-4 py-2 rounded-xl ${activeTab == "register" ? "bg-blue-500 text-white"
+              : "bg-gray-100 text-gray-700"
+              }rounded-r-lg`}>
+              Register
+            </button>
+
+          </div>
+
+          {activeTab === "login" && (
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  value={loginData.email}
+                  onChange={(e) => handleChange(e, setLoginData)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={loginData.password}
+                  onChange={(e) => handleChange(e, setLoginData)}
+                  required
+                />
+              </div>
+
+              <Button type="submit" className="w-full bg-blue-600 text-white">
+                Login
+              </Button>
+            </form>
+
+
+          )}
+          {activeTab === "register" && (
+
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div>
+
+                <Label htmlFor="displayName">Display Name</Label>
+                <Input
+                  id="displayName"
+                  name="displayName"
+                  type="text"
+                  placeholder="Enter your display name"
+                  value={registerData.displayName}
+                  onChange={(e) => handleChange(e, setRegisterData)}
+                  required
+                />
+              </div>
+
+              <div>
+
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="username or email"
+                  value={registerData.email}
+                  onChange={() => handleChange(e, setRegisterData)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={registerData.password}
+                  onChange={(e) => handleChange(e, setRegisterData)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={registerData.confirmPassword}
+                  onChange={(e) => handleChange(e, setRegisterData)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  id="role"
+                  name="role"
+                  value={registerData.role}
+                  onValueChange={(value) => setRegisterData((prev) => ({ ...prev, role: value }))}
+                  className="relative w-full"
+
+
+                >
+                  <SelectTrigger className="w-full border-gray-300 rounded-lg mb-4">
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent className="absolute z-50 w-full bg-white shadow-lg rounded-lg">
+                    <SelectGroup>
+                      <SelectLabel>Role</SelectLabel>
+                      <SelectItem value="Student">Student</SelectItem>
+                      <SelectItem value="Organization">Organization</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button type="submit" className="w-full bg-blue-600 text-white">
+                Register
+              </Button>
+            </form>
+
+
+          )}
+
+
+
         </div>
       </div>
     </div>

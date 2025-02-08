@@ -29,6 +29,7 @@ export function RegisterForm() {
       <div className="w-1/2 flex justify-center items-center bg-gray-50">
         <div className="max-w-sm w-full mx-auto p-6 bg-white shadow-lg rounded-lg ">
           <h1 className="text-4xl text-center font-bold p-1" >Welcome to Eventy</h1>
+          
           <h2 className="text-2xl font-semibold text-center mb-4 mt-4">Login</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
