@@ -14,7 +14,7 @@ import {
 } from "./select";
 
 export function LoginForm() {
-  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [loginData, setLoginData] = useState({ Email: "", password: "" });
   const [registerData, setRegisterData] = useState({
     name: "",
     displayName: "",
