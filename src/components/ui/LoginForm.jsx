@@ -57,6 +57,7 @@ export function LoginForm() {
       ></div>
       <div className="w-full lg:w-1/2 flex justify-center items-center bg-gray-50 p-4 sm:p-6">
         <div className="w-full max-w-sm mx-auto p-4 sm:p-6 bg-white shadow-lg rounded-lg">
+        
           <h1 className="text-2xl sm:text-4xl text-center font-bold p-1" >Welcome to Eventy</h1>
           <p className="text-center text-gray-700 text-sm sm:text-base mb-4 mt-2">
             <i>Connect, Engage & Explore</i>
