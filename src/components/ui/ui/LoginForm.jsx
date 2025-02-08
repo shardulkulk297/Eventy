@@ -46,19 +46,19 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex flex-col lg:flex-row h-screen w-screen">
 
       <div
-        className="w-1/2 h-full bg-cover bg-center"
+        className="hidden lg:block lg:w-1/2 h-1/3 lg:h-full bg-cover bg-center"
         style={{
           backgroundImage:
             'url("https://images.unsplash.com/photo-1527891751199-7225231a68dd")',
         }}
       ></div>
-      <div className="w-1/2 flex justify-center items-center bg-gray-50">
-        <div className="max-w-sm w-full mx-auto p-6 bg-white shadow-lg rounded-lg ">
-          <h1 className="text-4xl text-center font-bold p-1" >Welcome to Eventy</h1>
-          <p className="text-center text-black mb-4 mt-2">
+      <div className="w-full lg:w-1/2 flex justify-center items-center bg-gray-50 p-4 sm:p-6">
+        <div className="w-full max-w-sm mx-auto p-4 sm:p-6 bg-white shadow-lg rounded-lg">
+          <h1 className="text-2xl sm:text-4xl text-center font-bold p-1" >Welcome to Eventy</h1>
+          <p className="text-center text-gray-700 text-sm sm:text-base mb-4 mt-2">
             <i>Connect, Engage & Explore</i>
           </p>
 
