@@ -4,7 +4,7 @@ import { Button } from "./button";
 import { Label } from "./label";
 import { Link } from "react-router-dom";
 
-export function LoginForm() {
+export function RegisterForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleChange = (e) => {

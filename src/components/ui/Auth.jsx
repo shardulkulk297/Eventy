@@ -4,6 +4,7 @@ import { LoginForm } from './ui/LoginForm'
 const Auth = () => {
   return (
     <div>
+      
       <LoginForm/>
     </div>
   )
