@@ -12,6 +12,9 @@ import {
   SelectGroup,
   SelectLabel
 } from "./select";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+
 
 export function LoginForm() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -26,9 +29,84 @@ export function LoginForm() {
   })
   const [activeTab, setActiveTab] = useState("login")
 
+  const navigate = useNavigate();
+
+  const registerUser = async (e) => {
+
+    e.preventDefault();
+
+    const response = await fetch('http://localhost:5000/api/register', {
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json',
+      },
+
+      body: JSON.stringify({
+        displayName,
+        username,
+        password,
+        confirmPassword,
+        role
+      })
+      
+    })
+
+    const data = await response.json();
+    console.log(data);
+
+    if(data.status === 'ok'){
+      toast.success('Registration Successful');
+      goToPosts();
+    }
+
+    else{
+      if (data.error && Array.isArray(data.error)) {
+        data.error.forEach(errorMessage => toast.error(errorMessage));
+      } else {
+        toast.error('Check for existing credentials or try again later');
+      }
+    }
+    
+  }
+
+  const loginUser = ()=>{
+    e.preventDefault();
+
+    const response = await fetch(`http://localhost:5000/api/login`, {
+      method: 'POST',
+
+      headers: {
+        'Content-type': 'application/json',
+      },
+
+      body: JSON.stringify({
+        email,
+        password
+      })
+
+
+    })
+
+    const data = response.json();
+    console.log(data);
+
+
+    if(data.user)
+    {
+      
+    }
+
+
+  }
+
+  const goToPosts = ()=>{
+    navigate('/posts');
+  }
+
   const handleChange = (e, setData) => {
     const { name, value } = e.target;
-    setData((prev)=> ({...prev, [name]: value}))
+    setData((prev) => ({ ...prev, [name]: value }))
   };
 
   const handleTabSwitch = (tab) => {
@@ -57,7 +135,7 @@ export function LoginForm() {
       ></div>
       <div className="w-full lg:w-1/2 flex justify-center items-center bg-gray-50 p-4 sm:p-6">
         <div className="w-full max-w-sm mx-auto p-4 sm:p-6 bg-white shadow-lg rounded-lg">
-        
+
           <h1 className="text-2xl sm:text-4xl text-center font-bold p-1" >Welcome to Eventy</h1>
           <p className="text-center text-gray-700 text-sm sm:text-base mb-4 mt-2">
             <i>Connect, Engage & Explore</i>
@@ -113,7 +191,7 @@ export function LoginForm() {
                 />
               </div>
 
-              <Button type="submit" className="w-full bg-blue-600 text-white">
+              <Button onClick={loginUser} type="submit" className="w-full bg-blue-600 text-white">
                 Login
               </Button>
             </form>
@@ -200,7 +278,7 @@ export function LoginForm() {
                 </Select>
               </div>
 
-              <Button type="submit" className="w-full bg-blue-600 text-white">
+              <Button onClick={registerUser} type="submit" className="w-full bg-blue-600 text-white">
                 Register
               </Button>
             </form>
