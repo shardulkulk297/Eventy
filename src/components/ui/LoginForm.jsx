@@ -43,11 +43,10 @@ export function LoginForm() {
       },
 
       body: JSON.stringify({
-        displayName,
-        username,
-        password,
-        confirmPassword,
-        role
+        displayName: registerData.displayName,
+        username: registerData.username,
+        password: registerData.password,
+        role: registerData.role
       })
       
     })
@@ -70,7 +69,7 @@ export function LoginForm() {
     
   }
 
-  const loginUser = ()=>{
+  const loginUser = async(e)=>{
     e.preventDefault();
 
     const response = await fetch(`http://localhost:5000/api/login`, {
@@ -81,8 +80,8 @@ export function LoginForm() {
       },
 
       body: JSON.stringify({
-        email,
-        password
+        email: loginData.email,
+        password: loginData.password
       })
 
 
@@ -94,7 +93,18 @@ export function LoginForm() {
 
     if(data.user)
     {
+      localStorage.setItem('token', data.user);
+      toast.success('Login Successful');
+      goToPosts();
       
+    }
+    else{
+      if(data.error && Array.isArray(data.error)){
+        data.error.forEach(errorMessage => toast.error(errorMessage))
+      }
+      else{
+        toast.error('Invalid Credentials, Please try again');
+      }
     }
 
 
@@ -224,7 +234,7 @@ export function LoginForm() {
                   type="email"
                   placeholder="Enter your email"
                   value={registerData.email}
-                  onChange={() => handleChange(e, setRegisterData)}
+                  onChange={(e) => handleChange(e, setRegisterData)}
                   required
                 />
               </div>
