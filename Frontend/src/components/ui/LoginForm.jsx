@@ -21,7 +21,7 @@ export function LoginForm() {
   const [registerData, setRegisterData] = useState({
     name: "",
     displayName: "",
-    username: "",
+    email: "",
     password: "",
     confirmPassword: "",
     role: "",
@@ -44,7 +44,7 @@ export function LoginForm() {
 
       body: JSON.stringify({
         displayName: registerData.displayName,
-        username: registerData.username,
+        email: registerData.email,
         password: registerData.password,
         role: registerData.role
       })
