@@ -40,7 +40,15 @@ app.post('/api/register', async (req, res) => {
         if(err.name === 'ValidationError')
         {
             const errorMessages = Object.values(err.errors).map(error => error.message)
-            res.status(400).json
+            res.status(400).json({status: 'error', error: errorMessages})
+        }
+        else if(err.code === 11000)
+        {
+            res.status(400).json({status: 'error', error: ['Email already exists']})
+        }
+        else
+        {
+            res.status(500).json({status: 'error', error: 'An unexpected error occurred'})
         }
 
     }
