@@ -26,7 +26,7 @@ app.post('/api/register', async (req, res) => {
         } = req.body;
 
         await User.create({
-            displayName, email, password
+            displayName, email, password, role
         })
 
         res.json({ status: 'ok', user: true, message: 'Registered Successfully' })
@@ -54,3 +54,33 @@ app.post('/api/register', async (req, res) => {
     }
     
 })
+
+app.post('api/login', async (req, res)=>{
+    try {
+
+        const {email, password} = req.body;
+        
+        const user = await User.findOne({email, password})
+
+        if(user)
+        {
+            const token = jwt.sign({
+                displayName: user.displayName,
+                email: user.email,
+
+            }, 'eventy@297')
+
+            return res.json({status: 'ok', user: token});
+        }
+        else
+        {
+            return res.json({status: 'error', user: false, message: 'User Not Found'});
+        }
+        
+    } catch (error) {
+        console.log(error);
+        return res.json({status: 'error', user: false, message: 'An unexpected error occurred'});
+        
+    }
+})
+
