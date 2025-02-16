@@ -34,7 +34,7 @@ app.post('/api/register', async (req, res) => {
 
         res.json({ status: 'ok', user: true, message: 'Registered Successfully' })
 
-        console.log(req.body);
+        console.log("Registered Successfully", req.body);
 
     }
 
