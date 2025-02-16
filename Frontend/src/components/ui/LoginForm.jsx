@@ -87,7 +87,7 @@ export function LoginForm() {
 
     })
 
-    const data = response.json();
+    const data = await response.json();
     console.log(data);
 
 

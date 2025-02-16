@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 const mongoose = require('mongoose');
 app.use(cors());
+const bcrypt = require('bcrypt');
 
 const User = require('./models/user.model');
 const jwt = require('jsonwebtoken')
@@ -25,8 +26,10 @@ app.post('/api/register', async (req, res) => {
             role,
         } = req.body;
 
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         await User.create({
-            displayName, email, password, role
+            displayName, email, password: hashedPassword, role
         })
 
         res.json({ status: 'ok', user: true, message: 'Registered Successfully' })
@@ -60,22 +63,26 @@ app.post('/api/login', async (req, res)=>{
 
         const {email, password} = req.body;
         
-        const user = await User.findOne({email, password})
+        const user = await User.findOne({email})
 
-        if(user)
+        if(!user)
         {
-            const token = jwt.sign({
-                displayName: user.displayName,
-                email: user.email,
-
-            }, 'eventy@297')
-
-            return res.json({status: 'ok', user: token});
+          return res.status(401).json({status: 'error', user: false, message: 'User Not Found'});
         }
-        else
+        
+        const isValid = await bcrypt.compare(password, user.password)
+
+        if(!isValid)
         {
-            return res.json({status: 'error', user: false, message: 'User Not Found'});
+           return res.status(401).json({status: 'error', user: false, message: 'Invalid Credentials'})
         }
+
+        const token = jwt.sign({
+            displayName: user.displayName,
+            email: user.email,
+        }, 'eventy@297')
+
+        return res.json({status: 'ok', user: token, message: 'Logged in Successfully'})
         
     } catch (error) {
         console.log(error);
