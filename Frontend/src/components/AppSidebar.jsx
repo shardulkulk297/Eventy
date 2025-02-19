@@ -1,12 +1,15 @@
 import React from 'react'
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader } from './ui/sidebar'
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarGroupLabel, SidebarGroupContent } from './ui/sidebar'
 const AppSidebar = () => {
   return (
     <Sidebar>
-        <SidebarHeader />
+        <SidebarHeader>Eventy</SidebarHeader>
         <SidebarContent>
             <SidebarGroup>
-                Pokemon
+                <SidebarGroupLabel>Navigate</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  
+                </SidebarGroupContent>
             </SidebarGroup>
 
         </SidebarContent>
