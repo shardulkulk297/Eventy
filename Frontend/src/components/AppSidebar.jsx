@@ -35,7 +35,8 @@ const AppSidebar = () => {
   ]
 
   return (
-    <Sidebar>
+    <div className="h-full dark:bg-background">
+    <Sidebar className="dark:border-slate-700">
       <SidebarHeader><GalleryVerticalEnd className="h-6 w-6" /> Eventy</SidebarHeader>
       <SidebarHeader></SidebarHeader>
       <SidebarContent>
@@ -69,6 +70,7 @@ const AppSidebar = () => {
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
+    </div>
   )
 }
 

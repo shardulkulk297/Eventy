@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+
+body{
+  color: black;
+  background-color: white;
+}
 /* ... */
 @layer base {
   :root {
@@ -16,7 +21,7 @@
   }
 
   .dark {
-    --sidebar-background: 240 10% 3.9%;  /* Update this */
+    --sidebar-background: 240 10% 3.9%;  /* This is the correct dark background */
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -36,6 +41,23 @@
 
   .text-foreground {
     color: hsl(var(--foreground));
+  }
+
+  /* Add these new utility classes */
+  .bg-sidebar {
+    background-color: hsl(var(--sidebar-background));
+  }
+
+  .text-sidebar-foreground {
+    color: hsl(var(--sidebar-foreground));
+  }
+
+  .bg-sidebar-accent {
+    background-color: hsl(var(--sidebar-accent));
+  }
+
+  .text-sidebar-accent-foreground {
+    color: hsl(var(--sidebar-accent-foreground));
   }
 }
 
@@ -153,7 +175,7 @@
 
     --chart-5: 340 75% 55%;
 
-    --sidebar-background: 240 10% 3.9%;  /* Update this */
+    --sidebar-background: 240 10% 3.9%;  /* This needs to match the value above */
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
