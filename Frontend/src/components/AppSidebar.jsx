@@ -1,7 +1,9 @@
 import React from 'react'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from './ui/sidebar'
-import { Home, EarthIcon, FunctionSquare, ArrowBigUpIcon } from 'lucide-react'
+import { Home, EarthIcon, FunctionSquare, ArrowBigUpIcon, Settings, GalleryVerticalEnd } from 'lucide-react'
 const AppSidebar = () => {
+
+  
 
   const items = [
     {
@@ -20,44 +22,54 @@ const AppSidebar = () => {
       title: "Upcoming",
       url: '/upcoming',
       icon: ArrowBigUpIcon
+    },
+
+    {
+      title: "Settings",
+      url: '/settings',
+      icon: Settings
     }
+
+
+
   ]
 
-return (
-  <Sidebar>
-    <SidebarHeader>Eventy</SidebarHeader>
-    <SidebarContent>
-      <SidebarGroup>
-        <SidebarGroupLabel>Navigate</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
+  return (
+    <Sidebar>
+      <SidebarHeader><GalleryVerticalEnd className="h-6 w-6" /> Eventy</SidebarHeader>
+      <SidebarHeader></SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigate</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
 
-            {
-              items.map((item)=>{
-                <SidebarMenuItem key={item.title}>
+              {
+                items.map((item) => {
+                   return <SidebarMenuItem key={item.title}>
 
-                  <SidebarMenuButton asChild>
-                    
-                  <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                    <SidebarMenuButton asChild>
 
-                  </a>
-                  </SidebarMenuButton>
+                      <a href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
 
-                </SidebarMenuItem>
-              })
-            }
+                      </a>
+                    </SidebarMenuButton>
 
-          </SidebarMenu>
+                  </SidebarMenuItem>
+                })
+              }
 
-        </SidebarGroupContent>
-      </SidebarGroup>
+            </SidebarMenu>
 
-    </SidebarContent>
-    <SidebarFooter />
-  </Sidebar>
-)
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+      </SidebarContent>
+      <SidebarFooter />
+    </Sidebar>
+  )
 }
 
 export default AppSidebar
