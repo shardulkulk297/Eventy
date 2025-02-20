@@ -38,43 +38,38 @@ app.post('/api/register', async (req, res) => {
 
     }
 
-    catch(err){
+    catch (err) {
 
-        if(err.name === 'ValidationError')
-        {
+        if (err.name === 'ValidationError') {
             const errorMessages = Object.values(err.errors).map(error => error.message)
-            res.status(400).json({status: 'error', error: errorMessages})
+            res.status(400).json({ status: 'error', error: errorMessages })
         }
-        else if(err.code === 11000)
-        {
-            res.status(400).json({status: 'error', error: ['Email already exists']})
+        else if (err.code === 11000) {
+            res.status(400).json({ status: 'error', error: ['Email already exists'] })
         }
-        else
-        {
-            res.status(500).json({status: 'error', error: 'An unexpected error occurred'})
+        else {
+            res.status(500).json({ status: 'error', error: 'An unexpected error occurred' })
         }
 
     }
-    
+
 })
 
-app.post('/api/login', async (req, res)=>{
+app.post('/api/login', async (req, res) => {
     try {
 
-        const {email, password} = req.body;
-        
-        const user = await User.findOne({email})
+        const { email, password } = req.body;
 
-        if(!user)
-        {
-          return res.status(401).json({status: 'error', user: false, message: 'User Not Found'});
+        const user = await User.findOne({ email })
+
+        if (!user) {
+            return res.status(401).json({ status: 'error', user: false, message: 'User Not Found' });
         }
-        
+
         const isValid = await bcrypt.compare(password, user.password)
 
-        if(!isValid)
-        {
-           return res.status(401).json({status: 'error', user: false, message: 'Invalid Credentials'})
+        if (!isValid) {
+            return res.status(401).json({ status: 'error', user: false, message: 'Invalid Credentials' })
         }
 
         const token = jwt.sign({
@@ -82,14 +77,47 @@ app.post('/api/login', async (req, res)=>{
             email: user.email,
         }, 'eventy@297')
 
-        return res.json({status: 'ok', user: token, message: 'Logged in Successfully'})
-        
+        return res.json({ status: 'ok', user: token, message: 'Logged in Successfully' })
+
     } catch (error) {
         console.log(error);
-        return res.json({status: 'error', user: false, message: 'An unexpected error occurred'});
-        
+        return res.json({ status: 'error', user: false, message: 'An unexpected error occurred' });
+
     }
 })
 
+app.get('/api/user/', async (req, res) => {
+    try {
+        const token = req.headers.authorization;
+
+        if (!token) {
+            return res.status(401).json({ status: 'error', message: 'unauthorized' })
+        }
+
+        const decoded = jwt.verify(token, 'eventy@297');
+        const user = await User.findOne({ email: decoded.email }).select('-password');
+
+        if (!user) {
+            return res.status(401).json({ status: 'error', message: 'User not found' })
+        }
+
+        return res.json({
+            status: 'ok', user: {
+                displayName: user.displayName,
+                email: user.email,
+                avatar: user.avatar || null
+            }
+        })
+
+    } catch (error) {
+
+        console.log(error)
+        return res.status(401).json({ status: 'error', message: 'sometthing wrong' })
+
+    }
+
+
+})
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, ()=> console.log(`Server is running on http://localhost:${PORT}`))
+app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`))

@@ -30,7 +30,8 @@ const User = new mongoose.Schema({
         default: 'Student',
         
 
-    }
+    },
+    avatar: { type: String, default: 'https://api.dicebear.com/7.x/avatars/svg' }
 },
 {
     collection: 'user-data'
