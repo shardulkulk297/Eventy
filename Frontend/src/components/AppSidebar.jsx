@@ -1,11 +1,21 @@
 import React from 'react'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from './ui/sidebar'
 import { Home, EarthIcon, FunctionSquare, ArrowBigUpIcon, Settings, GalleryVerticalEnd } from 'lucide-react'
+import { NavUser } from './NavUser'
 const AppSidebar = () => {
 
   
+  const data = {
+    user: {
+      name: "shadcn",
+      email: "m@example.com",
+      
+    },
+  }
 
   const items = [
+
+    
     {
       title: "Home",
       url: '/posts',
@@ -68,7 +78,7 @@ const AppSidebar = () => {
         </SidebarGroup>
 
       </SidebarContent>
-      <SidebarFooter />
+      <SidebarFooter><NavUser user={data.user}/></SidebarFooter>
     </Sidebar>
     </div>
   )
