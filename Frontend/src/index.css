@@ -3,10 +3,7 @@
 @tailwind utilities;
 
 
-body{
-  color: black;
-  background-color: white;
-}
+
 /* ... */
 @layer base {
   :root {
