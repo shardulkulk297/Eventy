@@ -4,7 +4,7 @@ const Posts = () => {
   return (
     <div>
       
-      Your Posts
+      
     </div>
   )
 }
