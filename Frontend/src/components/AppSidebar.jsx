@@ -1,85 +1,74 @@
 import React from 'react'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from './ui/sidebar'
-import { Home, EarthIcon, FunctionSquare, ArrowBigUpIcon, Settings, GalleryVerticalEnd } from 'lucide-react'
+import { 
+  CalendarDays,
+  HomeIcon,
+  Trophy,
+  Calendar,
+  Settings,
+} from 'lucide-react'
 import { NavUser } from './NavUser'
+
 const AppSidebar = () => {
-
-  
-  const data = {
-    user: {
-      name: "shadcn",
-      email: "m@example.com",
-      
-    },
-  }
-
   const items = [
-
-    
     {
       title: "Home",
       url: '/posts',
-      icon: Home
+      icon: HomeIcon
     },
-
     {
       title: "Hackathons",
       url: '/hack',
-      icon: EarthIcon
+      icon: Trophy
     },
-
     {
       title: "Upcoming",
       url: '/upcoming',
-      icon: ArrowBigUpIcon
+      icon: Calendar
     },
-
     {
       title: "Settings",
       url: '/settings',
       icon: Settings
     }
-
-
-
   ]
 
   return (
     <div className="h-full dark:bg-background">
-    <Sidebar className="dark:border-slate-700">
-      <SidebarHeader><GalleryVerticalEnd className="h-6 w-6" /> Eventy</SidebarHeader>
-      <SidebarHeader></SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigate</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-
-              {
-                items.map((item) => {
-                   return <SidebarMenuItem key={item.title}>
-
+      <Sidebar className="dark:border-slate-700">
+        <SidebarHeader className="flex items-center gap-3 px-2">
+          <CalendarDays className="h-8 w-8 text-primary" />
+          <span className="text-2xl font-bold tracking-tight text-primary">Eventy</span>
+        </SidebarHeader>
+        <SidebarHeader></SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sm font-medium text-muted-foreground px-2">
+              Navigate
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-
-                      <a href={item.url}>
-                        <item.icon />
+                      <a 
+                        href={item.url} 
+                        className="flex items-center gap-4 text-base font-medium hover:text-primary transition-colors"
+                      >
+                        <item.icon className="h-5 w-5" />
                         <span>{item.title}</span>
-
                       </a>
                     </SidebarMenuButton>
-
                   </SidebarMenuItem>
-                })
-              }
-
-            </SidebarMenu>
-
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-      </SidebarContent>
-      <SidebarFooter><NavUser user={data.user}/></SidebarFooter>
-    </Sidebar>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <NavUser />
+        </SidebarFooter>
+      </Sidebar>
     </div>
   )
 }

@@ -87,7 +87,7 @@ export function NavUser() {
 
 
   return (
-    <SidebarMenu>
+    <SidebarMenu >
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -128,14 +128,14 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles />
-                Upgrade to Pro
+                Update Profile
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />
-                Account
+                Your Profile
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <CreditCard />
