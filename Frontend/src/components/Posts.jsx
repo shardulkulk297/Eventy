@@ -3,7 +3,8 @@ import { Button } from './ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from './ui/card'
 import { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-useState
+import { Heart, MessageCircle, Share2 } from 'lucide-react'
+
 const Posts = () => {
   const  [posts, setPosts] = useState([
     {
@@ -64,6 +65,32 @@ const Posts = () => {
                     {post.author.name} • {new Date(post.date).toLocaleDateString()}
                   </CardDescription>
                 </CardHeader>
+
+                <CardContent>
+                  <p className='text-muted-foreground'>
+                    {post.description}
+                  </p>
+                </CardContent>
+
+                <CardFooter className="flex justify-between">
+                  <div className="flex gap-4">
+                    <Button variant="ghost" size="sm" className="flex gap-1">
+                      <Heart className='h-4 w-4'/>
+                      <span>{post.likes}</span>
+
+                    </Button>
+                    <Button variant="ghost" size="sm" className="flex gap-1">
+                      <MessageCircle className='h-4 w-4'/>
+                      <span>{post.comments}</span>
+
+                    </Button>
+                  </div>
+
+                  <Button variant="ghost" size="sm">
+                    <Share2 className="h-4 w-4" />
+
+                  </Button>
+                </CardFooter>
 
                 
               </Card>
