@@ -1,104 +1,73 @@
-import React, { use } from 'react'
-import { Button } from './ui/button'
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from './ui/card'
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Heart, MessageCircle, Share2 } from 'lucide-react'
-
+import { Button } from "@/components/ui/button"
+import { CalendarDays } from 'lucide-react'
 const Posts = () => {
-  const  [posts, setPosts] = useState([
+  const [posts, setPosts] = useState([
     {
       id: 1,
       title: "Welcome to Eventy",
       description: "Streamline your events through our platform!",
-      image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&dpr=2&q=80",
+      image: "https://images.unsplash.com/photo-1487897068494-835d91e9ed8a?q=80&w=2015&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       author: {
         name: "Eventy Official",
         avatar: "https://api.dicebear.com/7.x/avatars/svg?seed=eventy",
       },
       date: "2024-02-20",
-      likes: 42,
-      comments: 8,
     },
   ])
+
   return (
-    <div className='container mx-auto py-8'>
-
-      <div className='mb-8'>
-
-        <Button className = 'w-full sm:w-auto'>
+    <div className="ml-[270px] p-8 max-w-4xl mx-auto">
+      <div className="mb-8">
+        <Button className="w-full sm:w-auto">
           Create New Post
-
         </Button>
-
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-
-        {
-          posts.map((post)=> (
-              <Card key={post.id} className="overflow-hidden">
-
-                {
-                  post.image && (
-                    <div className='aspect-video w-full overflow-hidden'>
-                      <img 
-                        src={post.image}
-                        alt={post.title}
-                        className='h-full w-full object-cover transition-transform hover:scale-105'
-                      />
-
-                    </div>
-                  )
-                }
-
-                <CardHeader >
-                  <div className='flex items-center gap-4'>
-                    <Avatar>
-                      <AvatarImage src={post.author.avatar} />
-                      <AvatarFallback>{post.author.name[0]}</AvatarFallback>
-                    </Avatar>
-                  </div>
-
-                  <CardTitle className='text-lg'>{post.title}</CardTitle>
-                  <CardDescription>
+      <div className="space-y-6">
+        {posts.map((post) => (
+          <Card key={post.id} className="overflow-hidden">
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 flex justify-center items-center rounded-full border-2 border-primary/10">
+                  {/* <AvatarImage 
+                    src={post.author.avatar} 
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="bg-primary/5 text-lg font-medium">
+                    {post.author.name[0]}
+                  </AvatarFallback> */}
+                   <CalendarDays className="h-8 w-8 text-primary" />
+                </Avatar>
+                <div>
+                  <CardTitle className="text-xl">{post.title}</CardTitle>
+                  <CardDescription className="text-sm">
                     {post.author.name} • {new Date(post.date).toLocaleDateString()}
                   </CardDescription>
-                </CardHeader>
+                </div>
+              </div>
+            </CardHeader>
 
-                <CardContent>
-                  <p className='text-muted-foreground'>
-                    {post.description}
-                  </p>
-                </CardContent>
-
-                <CardFooter className="flex justify-between">
-                  <div className="flex gap-4">
-                    <Button variant="ghost" size="sm" className="flex gap-1">
-                      <Heart className='h-4 w-4'/>
-                      <span>{post.likes}</span>
-
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex gap-1">
-                      <MessageCircle className='h-4 w-4'/>
-                      <span>{post.comments}</span>
-
-                    </Button>
-                  </div>
-
-                  <Button variant="ghost" size="sm">
-                    <Share2 className="h-4 w-4" />
-
-                  </Button>
-                </CardFooter>
-
-                
-              </Card>
-          ))
-        }
+            {post.image && (
+              <div className="aspect-video w-full overflow-hidden">
+                <img 
+                  src={post.image} 
+                  alt={post.title}
+                  className="h-full w-full object-cover transition-transform hover:scale-105"
+                />
+              </div>
+            )}
+            
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground">
+                {post.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-      
-      
     </div>
   )
 }
