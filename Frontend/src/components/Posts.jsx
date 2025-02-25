@@ -19,18 +19,18 @@ const Posts = () => {
   ])
 
   return (
-    <div className="ml-[270px] p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
+    <div className="ml-0 sm:ml-[270px] p-4 sm:p-8 max-w-full sm:max-w-4xl mx-auto">
+      <div className="mb-4 sm:mb-8">
         <Button className="w-full sm:w-auto">
           Create New Post
         </Button>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {posts.map((post) => (
           <Card key={post.id} className="overflow-hidden">
             <CardHeader>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <Avatar className="h-12 w-12 flex justify-center items-center rounded-full border-2 border-primary/10">
                   {/* <AvatarImage 
                     src={post.author.avatar} 
@@ -60,7 +60,7 @@ const Posts = () => {
               </div>
             )}
             
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <p className="text-muted-foreground">
                 {post.description}
               </p>
