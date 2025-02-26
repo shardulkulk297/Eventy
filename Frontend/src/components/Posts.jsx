@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { CalendarDays } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import CreateNewPost from './CreateNewPost'
+
 const Posts = () => {
   const [posts, setPosts] = useState([
     {
@@ -17,29 +20,32 @@ const Posts = () => {
       date: "2024-02-20",
     },
   ])
+  const navigate = useNavigate();
+
+  const newPost = ()=>{
+
+    navigate('/posts/createnewpost')
+
+  }
 
   return (
-    <div className="ml-0 sm:ml-[270px] p-4 sm:p-8 max-w-full sm:max-w-4xl mx-auto">
-      <div className="mb-4 sm:mb-8">
-        <Button className="w-full sm:w-auto">
+    <div className="ml-0 md:ml-[270px] p-4 md:p-8 max-w-full mx-auto">
+      <div className="mb-4 md:mb-8">
+        <Button onClick={newPost} className="w-full sm:w-auto">
           Create New Post
         </Button>
       </div>
 
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
         {posts.map((post) => (
           <Card key={post.id} className="overflow-hidden">
             <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <Avatar className="h-12 w-12 flex justify-center items-center rounded-full border-2 border-primary/10">
-                  {/* <AvatarImage 
-                    src={post.author.avatar} 
-                    className="object-cover"
-                  />
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 rounded-full border-2 border-primary/10">
+                  <AvatarImage src={post.author.avatar} className="object-cover" />
                   <AvatarFallback className="bg-primary/5 text-lg font-medium">
                     {post.author.name[0]}
-                  </AvatarFallback> */}
-                   <CalendarDays className="h-8 w-8 text-primary" />
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <CardTitle className="text-xl">{post.title}</CardTitle>
@@ -60,7 +66,7 @@ const Posts = () => {
               </div>
             )}
             
-            <CardContent className="pt-4 sm:pt-6">
+            <CardContent className="pt-6">
               <p className="text-muted-foreground">
                 {post.description}
               </p>
