@@ -36,16 +36,20 @@ const Posts = () => {
         </Button>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-2 sm:space-y-6">
         {posts.map((post) => (
-          <Card key={post.id} className="overflow-hidden">
+          <Card key={post.id} className="overflow-hidden max-w-lg mx-auto">
             <CardHeader>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12 rounded-full border-2 border-primary/10">
-                  <AvatarImage src={post.author.avatar} className="object-cover" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <Avatar className="h-12 w-12 flex justify-center items-center rounded-full border-2 border-primary/10">
+                  {/* <AvatarImage 
+                    src={post.author.avatar} 
+                    className="object-cover"
+                  />
                   <AvatarFallback className="bg-primary/5 text-lg font-medium">
                     {post.author.name[0]}
-                  </AvatarFallback>
+                  </AvatarFallback> */}
+                   <CalendarDays className="h-8 w-8 text-primary" />
                 </Avatar>
                 <div>
                   <CardTitle className="text-xl">{post.title}</CardTitle>
@@ -66,7 +70,7 @@ const Posts = () => {
               </div>
             )}
             
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <p className="text-muted-foreground">
                 {post.description}
               </p>

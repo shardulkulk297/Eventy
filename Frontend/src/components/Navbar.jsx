@@ -6,12 +6,12 @@ import { Avatar, AvatarFallback,
 
 const Navbar = () => {
     return (
-        <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6">
+        <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6 w-full">
             <div className="flex-1">
                 <Input type="text" placeholder="Search for events..." className="w-full max-w-md" />
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center justify-end space-x-4 ml-auto">
                 <button className="relative flex items-center">
                     <Bell className="h-6 w-6 text-gray-500 dark:text-gray-400" />
                     <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
