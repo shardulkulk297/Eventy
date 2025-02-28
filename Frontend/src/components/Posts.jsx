@@ -38,7 +38,7 @@ const Posts = () => {
 
       <div className="space-y-2 sm:space-y-6">
         {posts.map((post) => (
-          <Card key={post.id} className="overflow-hidden max-w-lg mx-auto">
+          <Card key={post.id} className="overflow-hidden max-w-2xl mx-auto">
             <CardHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <Avatar className="h-12 w-12 flex justify-center items-center rounded-full border-2 border-primary/10">
