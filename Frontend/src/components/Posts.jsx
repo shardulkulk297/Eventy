@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { CalendarDays } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import CreateNewPost from './CreateNewPost'
+
 
 const Posts = () => {
   const [posts, setPosts] = useState([
@@ -22,19 +22,10 @@ const Posts = () => {
   ])
   const navigate = useNavigate();
 
-  const newPost = ()=>{
-
-    navigate('/posts/createnewpost')
-
-  }
-
+  
   return (
     <div className="ml-0 md:ml-[270px] p-4 md:p-8 max-w-full mx-auto">
-      <div className="mb-4 md:mb-8">
-        <Button onClick={newPost} className="w-full sm:w-auto">
-          Create New Post
-        </Button>
-      </div>
+     
 
       <div className="space-y-2 sm:space-y-6">
         {posts.map((post) => (

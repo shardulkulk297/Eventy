@@ -1,14 +1,36 @@
 import React from 'react'
 import { Input } from '@/components/ui/input'
 import { Bell } from 'lucide-react'
-import { Avatar, AvatarFallback,
-    AvatarImage, } from '@/components/ui/avatar'
+import {
+    Avatar, AvatarFallback,
+    AvatarImage,
+} from '@/components/ui/avatar'
+import CreateNewPost from './CreateNewPost'
+import { useNavigate } from 'react-router-dom'
+import { Button } from './ui/button'
 
 const Navbar = () => {
+
+    const navigate = useNavigate();
+
+    const newPost = () => {
+
+        navigate('/posts/createnewpost')
+
+    }
+
     return (
         <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6 w-full">
             <div className="flex-1">
-                <Input type="text" placeholder="Search for events..." className="w-full max-w-md" />
+                <div className=" flex justify-start items-center">
+                    <Input type="text" placeholder="Search for events..." className="w-full max-w-md" />
+                    <Button onClick={newPost} className="md:mb-2 w-full sm:w-auto">
+                        Create New Post
+                    </Button>
+
+                </div>
+
+
             </div>
 
             <div className="flex items-center justify-end space-x-4 ml-auto">
@@ -29,5 +51,4 @@ const Navbar = () => {
 export default Navbar
 
 
-   
 
