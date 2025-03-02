@@ -18,17 +18,17 @@ const AppSidebar = () => {
     },
     {
       title: "Hackathons",
-      url: '/hack',
+      url: '/posts/hackathons',
       icon: Trophy
     },
     {
       title: "Upcoming",
-      url: '/upcoming',
+      url: '/posts/upcoming',
       icon: Calendar
     },
     {
       title: "Settings",
-      url: '/settings',
+      url: '/posts/settings',
       icon: Settings
     }
   ]
@@ -53,7 +53,7 @@ const AppSidebar = () => {
                     <SidebarMenuButton asChild>
                       <a 
                         href={item.url} 
-                        className="flex items-center gap-4 text-base font-medium hover:text-primary transition-colors"
+                        className="flex items-center gap-4 text-lg font-medium hover:text-primary transition-colors"
                       >
                         <item.icon className="h-5 w-5" />
                         <span>{item.title}</span>
