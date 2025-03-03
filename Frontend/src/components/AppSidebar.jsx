@@ -5,7 +5,7 @@ import {
   HomeIcon,
   Trophy,
   Calendar,
-  Settings,
+  Settings, Megaphone
 } from 'lucide-react'
 import { NavUser } from './NavUser'
 
@@ -30,6 +30,11 @@ const AppSidebar = () => {
       title: "Settings",
       url: '/posts/settings',
       icon: Settings
+    },
+    {
+      title: "Host Event",
+      url: '/posts/host',
+      icon: Megaphone
     }
   ]
 

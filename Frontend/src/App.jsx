@@ -10,6 +10,7 @@ import CreateNewPost from './components/CreateNewPost'
 import Hackathons from './components/Hackathons'
 import Upcoming from './components/Upcoming'
 import { Settings } from 'lucide-react'
+import Host from './components/Host'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -26,6 +27,7 @@ function App() {
           <Route path='hackathons' element={<Hackathons />} />
           <Route path='upcoming' element={<Upcoming />} />
           <Route path='settings' element={<Settings />} />  
+          <Route path='host' element={<Host />} />  
 
         </Route>
 
