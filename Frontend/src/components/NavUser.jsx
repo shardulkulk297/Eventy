@@ -35,37 +35,7 @@ export function NavUser() {
   const { isMobile } = useSidebar();
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-
-      try {
-        const response = await fetch('http://localhost:5000/api/user', {
-          headers: {
-            'Authorization': localStorage.getItem('token')
-          }
-        });
-        const data = await response.json();
-
-        if(data.status === 'ok')
-        {
-          console.log(data.user);
-          setUser(data.user);
-        }
-        else{
-          console.log(data.message);
-        }
-        
-
-      }
-      catch(error)
-      {
-        console.log(error);
-      }
-      
-    }
-
-    fetchUser();
-  },[]);
+ 
 
   if(!user)
   {
