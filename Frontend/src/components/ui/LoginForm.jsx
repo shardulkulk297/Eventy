@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "./input";
 import { Button } from "./button";
 import { Label } from "./label";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 import {
   Select,
   SelectContent,
@@ -14,9 +14,19 @@ import {
 } from "./select";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import {app, database} from "../../firebaseConfig";
+import { collection } from "firebase/firestore";
+import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword} from "firebase/auth";
+import { addDoc } from "firebase/firestore";
+
 
 
 export function LoginForm() {
+
+  const auth = getAuth(app);
+  const dbInstance = collection(database, "users");
+
+  
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({
     name: "",
@@ -30,6 +40,50 @@ export function LoginForm() {
   const [activeTab, setActiveTab] = useState("login")
 
   const navigate = useNavigate();
+
+  const loginUser = ()=>{
+    signInWithEmailAndPassword(auth, loginData.email, loginData.password)
+    .then((response)=>{
+      toast.success("Login Successful");
+      console.log(response);
+      goToPosts();
+    })
+    .catch((err)=>{
+      console.log(err);
+      toast.error(err.message);
+    })
+  }
+
+  const registerUser = ()=>{
+
+    if(registerData.password !== registerData.confirmPassword){
+      toast.error("Passwords do not match"); 
+      return;
+    }
+
+    createUserWithEmailAndPassword(auth, registerData.email, registerData.password)
+    .then((response)=>{
+      toast.success("Registration Successful");
+      console.log(response);
+      addDoc(dbInstance, {
+        displayName: registerData.displayName,
+        email: registerData.email,
+        role: registerData.role
+      })
+      .then((docRef)=>{
+        console.log("Document written with ID: ", docRef.id);
+      })
+      .catch((err)=>{
+        console.log(err);
+      })
+      goToPosts();
+
+    })
+    .catch((err)=>{
+      toast.error(err.message);
+      console.log(err)})
+  }
+
 
   
   const goToPosts = ()=>{
