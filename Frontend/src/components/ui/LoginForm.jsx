@@ -16,9 +16,10 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {app, database} from "../../firebaseConfig";
 import { collection } from "firebase/firestore";
-import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword} from "firebase/auth";
+import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile} from "firebase/auth";
 import { addDoc } from "firebase/firestore";
-
+import { Avatar } from "@radix-ui/react-avatar";
+import {getStorage, ref, uploadBytes, getDownloadURL} from "firebase/storage";
 
 
 export function LoginForm() {
@@ -34,6 +35,7 @@ export function LoginForm() {
     email: "",
     password: "",
     confirmPassword: "",
+    imageFile: "",
     role: "",
 
   })
@@ -54,34 +56,70 @@ export function LoginForm() {
     })
   }
 
-  const registerUser = ()=>{
+  const registerUser = async()=>{
 
     if(registerData.password !== registerData.confirmPassword){
       toast.error("Passwords do not match"); 
       return;
     }
 
-    createUserWithEmailAndPassword(auth, registerData.email, registerData.password)
-    .then((response)=>{
-      toast.success("Registration Successful");
-      console.log(response);
-      addDoc(dbInstance, {
+    try {
+      const response = await createUserWithEmailAndPassword(
+        auth,
+        registerData.email, 
+        registerData.password
+      )
+
+      const user = response.user;
+
+      let imageURL = "https://api.dicebear.com/7.x/avatars/svg";
+
+      // if(registerData.imageFile){
+      //to be done when firebase storage is setup
+      // }
+
+      await updateProfile(user, {
+        displayName: registerData.displayName,
+        photoURL: imageURL
+      })
+
+      await addDoc(dbInstance, {
+        uid: user.uid,
         displayName: registerData.displayName,
         email: registerData.email,
-        role: registerData.role
+        role: registerData.role,
+        photoURL: imageURL
       })
-      .then((docRef)=>{
-        console.log("Document written with ID: ", docRef.id);
-      })
-      .catch((err)=>{
-        console.log(err);
-      })
-      goToPosts();
 
-    })
-    .catch((err)=>{
-      toast.error(err.message);
-      console.log(err)})
+      toast.success("Registration Successful");
+      goToPosts();
+      
+    } catch (error) {
+      
+    }
+
+    // createUserWithEmailAndPassword(auth, registerData.email, registerData.password)
+    // .then((response)=>{
+    //   toast.success("Registration Successful");
+    //   console.log(response);
+    //   addDoc(dbInstance, {
+    //     displayName: registerData.displayName,
+    //     email: registerData.email,
+    //     role: registerData.role,
+    //     avatar: "https://api.dicebear.com/7.x/avatars/svg"
+    //   })
+    //   .then((docRef)=>{
+    //     console.log("Document written with ID: ", docRef.id);
+    //   })
+    //   .catch((err)=>{
+    //     console.log(err);
+    //   })
+    //   goToPosts();
+
+    // })
+    // .catch((err)=>{
+    //   toast.error(err.message);
+    //   console.log(err)})
   }
 
 
@@ -235,6 +273,20 @@ export function LoginForm() {
                   type="password"
                   placeholder="Confirm your password"
                   value={registerData.confirmPassword}
+                  onChange={(e) => handleChange(e, setRegisterData)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="imageFile">Upload Profile pic</Label>
+                <Input
+                  id="imageFile"
+                  name="imageFile"
+                  type="file"
+                  accept="image/*"
+                  placeholder="imageFile"
+                  value={registerData.imageFile}
                   onChange={(e) => handleChange(e, setRegisterData)}
                   required
                 />
