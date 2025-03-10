@@ -20,12 +20,17 @@ import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, upd
 import { addDoc } from "firebase/firestore";
 import { Avatar } from "@radix-ui/react-avatar";
 import {getStorage, ref, uploadBytes, getDownloadURL} from "firebase/storage";
+import { State, City } from "country-state-city";
+
+
+
 
 
 export function LoginForm() {
 
   const auth = getAuth(app);
   const dbInstance = collection(database, "users");
+
 
   
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -42,6 +47,17 @@ export function LoginForm() {
   const [activeTab, setActiveTab] = useState("login")
 
   const navigate = useNavigate();
+
+  const [selectedState, setSelectedState] = useState("");
+  const [cities, setCities] = useState([]);
+
+  const indianStates = State.getStatesOfCountry("IN");
+
+  const handleStateChange = (stateCode) => {
+    setSelectedState(stateCode);
+    const filteredCities = City.getCitiesOfState("IN", stateCode);
+    setCities(filteredCities || []);
+  }
 
   const loginUser = ()=>{
     signInWithEmailAndPassword(auth, loginData.email, loginData.password)
@@ -98,28 +114,7 @@ export function LoginForm() {
       
     }
 
-    // createUserWithEmailAndPassword(auth, registerData.email, registerData.password)
-    // .then((response)=>{
-    //   toast.success("Registration Successful");
-    //   console.log(response);
-    //   addDoc(dbInstance, {
-    //     displayName: registerData.displayName,
-    //     email: registerData.email,
-    //     role: registerData.role,
-    //     avatar: "https://api.dicebear.com/7.x/avatars/svg"
-    //   })
-    //   .then((docRef)=>{
-    //     console.log("Document written with ID: ", docRef.id);
-    //   })
-    //   .catch((err)=>{
-    //     console.log(err);
-    //   })
-    //   goToPosts();
-
-    // })
-    // .catch((err)=>{
-    //   toast.error(err.message);
-    //   console.log(err)})
+   
   }
 
 
@@ -311,6 +306,60 @@ export function LoginForm() {
                       <SelectLabel>Role</SelectLabel>
                       <SelectItem value="Student">Student</SelectItem>
                       <SelectItem value="Organization">Organization</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="state">Select State</Label>
+                <Select
+                  id="state"
+                  name="state"
+                  value={registerData.state}
+                  onValueChange={handleStateChange}
+                  className="relative w-full"
+
+
+                >
+                  <SelectTrigger className="w-full border-gray-300 rounded-lg mb-4">
+                    <SelectValue placeholder="Select State" />
+                  </SelectTrigger>
+
+                  <SelectContent className="absolute z-50 max-w-lg bg-white shadow-lg rounded-lg">
+                    <SelectGroup>
+                      {indianStates.map((state)=>{
+                        return <SelectItem key={state.isoCode}  value={state.isoCode}>{state.name}</SelectItem>
+                      })}
+                      
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="state">Select City</Label>
+                <Select
+                  id="city"
+                  name="city"
+                  value={registerData.city}
+                  onValueChange={handleStateChange}
+                  className="relative w-full"
+
+
+                >
+                  <SelectTrigger className="w-full border-gray-300 rounded-lg mb-4">
+                    <SelectValue placeholder="Select City" />
+                  </SelectTrigger>
+
+                  <SelectContent className="absolute z-50 max-w-lg bg-white shadow-lg rounded-lg">
+                    <SelectGroup>
+
+                      
+                      {cities.map((city)=>{
+                        return <SelectItem key={city.name}  value={city.name}>{city.name}</SelectItem>
+                      })}
+                      
                     </SelectGroup>
                   </SelectContent>
                 </Select>
