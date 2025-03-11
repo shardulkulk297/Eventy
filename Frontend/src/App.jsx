@@ -11,6 +11,7 @@ import Hackathons from './components/Hackathons'
 import Upcoming from './components/Upcoming'
 import { Settings } from 'lucide-react'
 import Host from './components/Host'
+import RegisterData from './components/RegisterData'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -20,6 +21,7 @@ function App() {
       <Toaster position='top-center' />
       <Routes>
         <Route path='/' element={<Auth />} />
+        <Route path = '/registerData' element={<RegisterData />} />
 
         <Route path='posts' element={<Layout />}>
           <Route index element={<Posts />} />

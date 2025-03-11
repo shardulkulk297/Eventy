@@ -20,7 +20,7 @@ import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, upd
 import { addDoc } from "firebase/firestore";
 import { Avatar } from "@radix-ui/react-avatar";
 import {getStorage, ref, uploadBytes, getDownloadURL} from "firebase/storage";
-import { State, City } from "country-state-city";
+
 
 
 
@@ -41,23 +41,13 @@ export function LoginForm() {
     password: "",
     confirmPassword: "",
     imageFile: "",
-    role: "",
 
   })
   const [activeTab, setActiveTab] = useState("login")
 
   const navigate = useNavigate();
 
-  const [selectedState, setSelectedState] = useState("");
-  const [cities, setCities] = useState([]);
-
-  const indianStates = State.getStatesOfCountry("IN");
-
-  const handleStateChange = (stateCode) => {
-    setSelectedState(stateCode);
-    const filteredCities = City.getCitiesOfState("IN", stateCode);
-    setCities(filteredCities || []);
-  }
+ 
 
   const loginUser = ()=>{
     signInWithEmailAndPassword(auth, loginData.email, loginData.password)
@@ -103,14 +93,14 @@ export function LoginForm() {
         uid: user.uid,
         displayName: registerData.displayName,
         email: registerData.email,
-        role: registerData.role,
         photoURL: imageURL
       })
 
       toast.success("Registration Successful");
-      goToPosts();
+      goToRegisterData();
       
     } catch (error) {
+      console.log(error)
       
     }
 
@@ -118,7 +108,9 @@ export function LoginForm() {
   }
 
 
-  
+  const goToRegisterData = ()=>{
+    navigate('/registerData');
+  }
   const goToPosts = ()=>{
     navigate('/posts');
   }
@@ -286,85 +278,6 @@ export function LoginForm() {
                   required
                 />
               </div>
-
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  id="role"
-                  name="role"
-                  value={registerData.role}
-                  onValueChange={(value) => setRegisterData((prev) => ({ ...prev, role: value }))}
-                  className="relative w-full"
-
-
-                >
-                  <SelectTrigger className="w-full border-gray-300 rounded-lg mb-4">
-                    <SelectValue placeholder="Select Role" />
-                  </SelectTrigger>
-                  <SelectContent className="absolute z-50 w-full bg-white shadow-lg rounded-lg">
-                    <SelectGroup>
-                      <SelectLabel>Role</SelectLabel>
-                      <SelectItem value="Student">Student</SelectItem>
-                      <SelectItem value="Organization">Organization</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="state">Select State</Label>
-                <Select
-                  id="state"
-                  name="state"
-                  value={registerData.state}
-                  onValueChange={handleStateChange}
-                  className="relative w-full"
-
-
-                >
-                  <SelectTrigger className="w-full border-gray-300 rounded-lg mb-4">
-                    <SelectValue placeholder="Select State" />
-                  </SelectTrigger>
-
-                  <SelectContent className="absolute z-50 max-w-lg bg-white shadow-lg rounded-lg">
-                    <SelectGroup>
-                      {indianStates.map((state)=>{
-                        return <SelectItem key={state.isoCode}  value={state.isoCode}>{state.name}</SelectItem>
-                      })}
-                      
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="state">Select City</Label>
-                <Select
-                  id="city"
-                  name="city"
-                  value={registerData.city}
-                  onValueChange={handleStateChange}
-                  className="relative w-full"
-
-
-                >
-                  <SelectTrigger className="w-full border-gray-300 rounded-lg mb-4">
-                    <SelectValue placeholder="Select City" />
-                  </SelectTrigger>
-
-                  <SelectContent className="absolute z-50 max-w-lg bg-white shadow-lg rounded-lg">
-                    <SelectGroup>
-
-                      
-                      {cities.map((city)=>{
-                        return <SelectItem key={city.name}  value={city.name}>{city.name}</SelectItem>
-                      })}
-                      
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <Button onClick={registerUser} type="submit" className="w-full bg-blue-600 text-white">
                 Register
               </Button>
