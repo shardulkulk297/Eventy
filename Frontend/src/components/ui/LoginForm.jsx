@@ -15,7 +15,7 @@ import {
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {app, database} from "../../firebaseConfig";
-import { collection } from "firebase/firestore";
+import { collection, serverTimestamp } from "firebase/firestore";
 import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile} from "firebase/auth";
 import { addDoc } from "firebase/firestore";
 import { Avatar } from "@radix-ui/react-avatar";
@@ -93,14 +93,26 @@ export function LoginForm() {
         uid: user.uid,
         displayName: registerData.displayName,
         email: registerData.email,
-        photoURL: imageURL
+        photoURL: imageURL,
+        userInterests: [],
+        age: null,
+        collegeUniversity: null,
+        designation: null,
+        type: "student",
+        registeredEvents: [],
+        createdEvents: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       })
 
       toast.success("Registration Successful");
-      goToRegisterData();
+
+      goToRegisterData(user.uid);
       
     } catch (error) {
+      toast.error(error.message);
       console.log(error)
+
       
     }
 
@@ -108,8 +120,9 @@ export function LoginForm() {
   }
 
 
-  const goToRegisterData = ()=>{
-    navigate('/registerData');
+  const goToRegisterData = (id)=>{
+    console.log(id);
+    navigate('/registerData', {state: {id}});
   }
   const goToPosts = ()=>{
     navigate('/posts');

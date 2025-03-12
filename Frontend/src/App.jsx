@@ -14,7 +14,7 @@ import Host from './components/Host'
 import RegisterData from './components/RegisterData'
 
 function App() {
-  const [count, setCount] = useState(0)
+  
 
   return (
     <>
