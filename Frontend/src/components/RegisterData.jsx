@@ -37,7 +37,7 @@ import {
 const RegisterData = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { id } = location.state;
+  // const { id } = location.state;
   const dbInstance = collection(database, "users");
 
   const [registerData, setLoginData] = useState({
@@ -52,6 +52,7 @@ const RegisterData = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     console.log(registerData);
+    
   }
   const handleChange = (e, set) => {
     set({
@@ -59,6 +60,15 @@ const RegisterData = () => {
       [e.target.name]: e.target.value
     })
   }
+  const handleDateChange = (date)=>{
+    setLoginData((prev) => ({ ...prev, dateOfBirth: date }));
+  }
+
+  const handleInterestsChange = (values) => {
+    setSelectedInterests(values);
+    setLoginData((prev) => ({ ...prev, userInterests: values }));
+  };
+
   const registerUser = async () => {
 
     try {
@@ -134,22 +144,14 @@ const RegisterData = () => {
               <Label htmlFor='Interests'>Select Your Interests</Label>
               <MultiSelect className=""
                 options={InterestsList}
-                onValueChange={setSelectedInterests}
+                onValueChange={handleInterestsChange}
                 defaultValue={selectedInterests}
                 placeholder="Select Interests"
                 variant="inverted"
                 animation={2}
-                onChange={(e) => handleChange(e, setLoginData)}
                 required
               />
-              {/* <div className="mt-4">
-                <h2 className="text-xl font-semibold">Selected Frameworks:</h2>
-                <ul className="list-disc list-inside">
-                  {selectedInterests.map((interest) => (
-                    <li key={interest}>{interest}</li>
-                  ))}
-                </ul>
-              </div> */}
+             
             </div>
 
             <div>
@@ -160,7 +162,7 @@ const RegisterData = () => {
                 type="dateOfBirth"
                 placeholder="Enter your Date of Birth"
                 value={registerData.dateOfBirth}
-                onChange={(e) => handleChange(e, setLoginData)}
+                onChange={(date) => setLoginData((prev) => ({ ...prev, dateOfBirth: date }))}
                 required
               />
             </div>
@@ -208,7 +210,7 @@ const RegisterData = () => {
 
 
 
-            <Button onClick={registerUser} type="submit" className="w-full bg-blue-600 text-white">
+            <Button onClick={handleSubmit} type="submit" className="w-full bg-blue-600 text-white">
               Register
             </Button>
           </form>
