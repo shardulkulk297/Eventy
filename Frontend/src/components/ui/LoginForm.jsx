@@ -89,7 +89,7 @@ export function LoginForm() {
         photoURL: imageURL
       })
 
-      await addDoc(dbInstance, {
+      const docRef = await addDoc(dbInstance, {
         uid: user.uid,
         displayName: registerData.displayName,
         email: registerData.email,
@@ -107,7 +107,7 @@ export function LoginForm() {
 
       toast.success("Registration Successful");
 
-      goToRegisterData(user.uid);
+      goToRegisterData(docRef.id);
       
     } catch (error) {
       toast.error(error.message);

@@ -34,7 +34,7 @@ import {
 const RegisterData = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // const { id } = location.state;
+  const { id } = location.state;
   const dbInstance = collection(database, "users");
 
   const [registerData, setLoginData] = useState({
@@ -50,7 +50,7 @@ const RegisterData = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(registerData);
-    // registerUser();
+    registerUser();
   };
 
   const handleChange = (e) => {
