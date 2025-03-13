@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-
+@import 'flowbite';
+@import 'flowbite/dist/datepicker.css';
 
 /* ... */
 @layer base {

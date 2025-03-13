@@ -1,17 +1,14 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Select } from './ui/select'
-import { Button } from './ui/button'
-import { useState } from 'react'
-import { DatePicker } from './ui/DatePicker'
-import { useLocation } from 'react-router-dom'
-import { collection, doc } from 'firebase/firestore'
-import { database } from '@/firebaseConfig'
-import { updateDoc } from 'firebase/firestore'
-import toast from 'react-hot-toast'
-import MultiSelect  from './ui/MultiSelect'
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select } from './ui/select';
+import { Button } from './ui/button';
+import { Datepicker } from 'flowbite-datepicker';
+import { collection, doc, updateDoc } from 'firebase/firestore';
+import { database } from '@/firebaseConfig';
+import toast from 'react-hot-toast';
+import MultiSelect from './ui/MultiSelect';
 import {
   Cat,
   Guitar,
@@ -35,8 +32,8 @@ import {
 } from "lucide-react";
 
 const RegisterData = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
   // const { id } = location.state;
   const dbInstance = collection(database, "users");
 
@@ -47,22 +44,26 @@ const RegisterData = () => {
     designation: '',
     type: "Student",
     userInterests: [],
-  })
+  });
   const [selectedInterests, setSelectedInterests] = useState([]);
+
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     console.log(registerData);
-    
-  }
-  const handleChange = (e, set) => {
-    set({
+    // registerUser();
+  };
+
+  const handleChange = (e) => {
+    setLoginData({
       ...registerData,
-      [e.target.name]: e.target.value
-    })
-  }
-  const handleDateChange = (date)=>{
-    setLoginData((prev) => ({ ...prev, dateOfBirth: date }));
-  }
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    setLoginData((prev) => ({ ...prev, dateOfBirth: selectedDate }));
+  };
 
   const handleInterestsChange = (values) => {
     setSelectedInterests(values);
@@ -70,10 +71,8 @@ const RegisterData = () => {
   };
 
   const registerUser = async () => {
-
     try {
       const userRef = doc(database, "users", id);
-
       await updateDoc(userRef, {
         age: registerData.age,
         dateOfBirth: registerData.dateOfBirth,
@@ -81,19 +80,15 @@ const RegisterData = () => {
         designation: registerData.designation,
         type: registerData.type,
         userInterests: registerData.userInterests,
-        updatedAt: new Date()
-
-      })
+        updatedAt: new Date(),
+      });
       toast.success("Data Registered Successfully");
-      navigate('/posts')
-
+      navigate('/posts');
     } catch (error) {
-      toast.error(error);
+      toast.error(error.message || "An error occurred");
       console.log(error);
-
     }
-
-  }
+  };
 
   const InterestsList = [
     { value: "Art", label: "Art", icon: Cat },
@@ -116,33 +111,31 @@ const RegisterData = () => {
     { value: "DIY", label: "DIY", icon: Wrench },
     { value: "Blogging", label: "Blogging", icon: PenTool },
   ];
+
   return (
     <div>
-
       <main className='flex flex-col items-center justify-center h-screen'>
-
         <div>
           <h1 className='text-2xl font-bold'>Register Data</h1>
           <p className='text-sm text-gray-500'>Please fill in the form</p>
           <form onSubmit={handleSubmit} className="space-y-4">
-
             <div>
-              <Label htmlFor="Age">Age</Label>
+              <Label htmlFor="age">Age</Label>
               <Input
                 id="age"
                 name="age"
-                type="age"
+                type="number"
                 placeholder="Enter your Age"
                 value={registerData.age}
-                onChange={(e) => handleChange(e, setLoginData)}
+                onChange={handleChange}
                 required
               />
-
             </div>
 
             <div>
               <Label htmlFor='Interests'>Select Your Interests</Label>
-              <MultiSelect className=""
+              <MultiSelect
+                className=""
                 options={InterestsList}
                 onValueChange={handleInterestsChange}
                 defaultValue={selectedInterests}
@@ -151,32 +144,29 @@ const RegisterData = () => {
                 animation={2}
                 required
               />
-             
             </div>
 
             <div>
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <DatePicker className=""
-                id="dateOfBirth"
-                name="dateOfBirth"
-                type="dateOfBirth"
-                placeholder="Enter your Date of Birth"
-                value={registerData.dateOfBirth}
-                onChange={(date) => setLoginData((prev) => ({ ...prev, dateOfBirth: date }))}
-                required
+              <Input type="date" 
+               id="dateOfBirth"
+               name="dateOfBirth"
+               placeholder="Enter your Date of Birth"
+               value={registerData.dateOfBirth}
+               onChange={handleDateChange}
+               required
               />
             </div>
-
 
             <div>
               <Label htmlFor="collegeUniversity">College/University</Label>
               <Input
                 id="collegeUniversity"
                 name="collegeUniversity"
-                type="collegeUniversity"
+                type="text"
                 placeholder="Enter your College/University"
                 value={registerData.collegeUniversity}
-                onChange={(e) => handleChange(e, setLoginData)}
+                onChange={handleChange}
                 required
               />
             </div>
@@ -186,20 +176,21 @@ const RegisterData = () => {
               <Input
                 id="designation"
                 name="designation"
-                type="designation"
+                type="text"
                 placeholder="Enter your Designation"
                 value={registerData.designation}
-                onChange={(e) => handleChange(e, setLoginData)}
+                onChange={handleChange}
                 required
               />
             </div>
+
             <div>
               <Label htmlFor="type">Type</Label>
               <select
                 id="type"
                 name="type"
                 value={registerData.type}
-                onChange={(e) => handleChange(e, setLoginData)}
+                onChange={handleChange}
                 required
               >
                 <option value="Student">Student</option>
@@ -207,27 +198,14 @@ const RegisterData = () => {
               </select>
             </div>
 
-
-
-
             <Button onClick={handleSubmit} type="submit" className="w-full bg-blue-600 text-white">
               Register
             </Button>
           </form>
-
-
-
         </div>
-
-
       </main>
-
-
-
-
     </div>
+  );
+};
 
-  )
-}
-
-export default RegisterData
+export default RegisterData;
