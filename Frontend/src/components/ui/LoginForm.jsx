@@ -105,7 +105,7 @@ export function LoginForm() {
         updatedAt: serverTimestamp(),
       })
 
-      toast.success("Registration Successful");
+      toast.success("Registration Successful"); //passing document Id
 
       goToRegisterData(docRef.id);
       
