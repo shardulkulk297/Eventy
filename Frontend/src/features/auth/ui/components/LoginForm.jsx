@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Input } from "./input";
-import { Button } from "./button";
-import { Label } from "./label";
+import { Input } from "../../../../shared/ui/input";
+import { Button } from "../../../../shared/ui/button";
+import { Label } from "../../../../shared/ui/label";
 // import { Link } from "react-router-dom";
 import {
   Select,
@@ -11,10 +11,10 @@ import {
   SelectValue,
   SelectGroup,
   SelectLabel
-} from "./select";
+} from "../../../../shared/ui/select";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import {app, database} from "../../firebaseConfig";
+import {app, database} from "../../../../firebaseConfig";
 import { collection, serverTimestamp } from "firebase/firestore";
 import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile} from "firebase/auth";
 import { addDoc } from "firebase/firestore";

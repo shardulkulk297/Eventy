@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import Auth from './components/Auth'
-import Posts from './components/Posts'
+import Auth from './features/auth/ui/pages/Auth'
+import Posts from './pages/Posts'
 import './App.css'
 import { Toaster } from 'react-hot-toast'
-import Layout from './components/Layout'
-import { ThemeProvider } from './components/ThemeProvider'
-import CreateNewPost from './components/CreateNewPost'
-import Hackathons from './components/Hackathons'
-import Upcoming from './components/Upcoming'
+import Layout from './shared/components/Layout'
+import { ThemeProvider } from './shared/themes/ThemeProvider'
+import Hackathons from './pages/Hackathons'
+import Upcoming from './pages/Upcoming'
 import { Settings } from 'lucide-react'
-import Host from './components/Host'
-import RegisterData from './components/RegisterData'
+import Host from './pages/Host'
+import RegisterData from './features/auth/ui/pages/RegisterData'
+import CreateEvent from './features/CreateEvent/CreateEvent'
+import CreateOrganization from './features/CreateOrganization/CreateOrganization'
 
 function App() {
   
@@ -25,7 +26,8 @@ function App() {
 
         <Route path='posts' element={<Layout />}>
           <Route index element={<Posts />} />
-          <Route path='createnewpost' element={<CreateNewPost />} />
+          <Route path='createevent' element={<CreateEvent/>} />
+          <Route path = 'createorganization' element={<CreateOrganization/>} />
           <Route path='hackathons' element={<Hackathons />} />
           <Route path='upcoming' element={<Upcoming />} />
           <Route path='settings' element={<Settings />} />  

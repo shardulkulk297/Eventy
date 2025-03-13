@@ -1,22 +1,25 @@
 import React from 'react'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/shared/ui/input'
 import { Bell } from 'lucide-react'
 import {
     Avatar, AvatarFallback,
     AvatarImage,
-} from '@/components/ui/avatar'
-import CreateNewPost from './CreateNewPost'
+} from '@/shared/ui/avatar'
+import CreateNewPost from '../../features/CreateEvent/CreateEvent'
 import { useNavigate } from 'react-router-dom'
-import { Button } from './ui/button'
+import { Button } from '../ui/button'
 
 const Navbar = () => {
 
     const navigate = useNavigate();
 
-    const newPost = () => {
+    const newEvent = () => {
 
-        navigate('/posts/createnewpost')
+        navigate('/posts/createevent')
 
+    }
+    const newOrg = ()=>{
+        navigate('/posts/createorganization')
     }
 
     return (
@@ -24,8 +27,11 @@ const Navbar = () => {
             <div className="flex-1">
                 <div className=" flex justify-start items-center">
                     <Input type="text" placeholder="Search for events..." className="w-full max-w-md" />
-                    <Button onClick={newPost} className="md:mb-2 w-full sm:w-auto">
-                        Create New Post
+                    <Button onClick={newEvent} className="md:mb-2 w-full sm:w-auto">
+                        Create Event
+                    </Button>
+                    <Button onClick={newOrg} className="md:mb-2 w-full sm:w-auto">
+                        Create Organization
                     </Button>
 
                 </div>

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Select } from './ui/select';
-import { Button } from './ui/button';
+import { Input } from '../../../../shared/ui/input';
+import { Label } from '../../../../shared/ui/label';
+import { Select } from '../../../../shared/ui/select';
+import { Button } from '../../../../shared/ui/button';
 import { Datepicker } from 'flowbite-datepicker';
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import { database } from '@/firebaseConfig';
 import toast from 'react-hot-toast';
-import MultiSelect from './ui/MultiSelect';
+import MultiSelect from '../../../../shared/ui/MultiSelect';
 import {
   Cat,
   Guitar,
