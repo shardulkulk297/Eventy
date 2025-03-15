@@ -4,7 +4,7 @@ import { Label } from '@/shared/ui/label'
 import { Button } from '@/shared/ui/button'
 import { useState } from 'react'
 import { getAuth } from "firebase/auth";
-import { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth'
 import { app, database } from '@/firebaseConfig';
 import { useEffect } from 'react'
@@ -18,35 +18,9 @@ const CreateOrganization = () => {
   const auth = getAuth(app);
   const dbInstance = collection(database, "organizations");
   
-const updateUserDocument = async (newData) => {
-  if (!auth.currentUser) {
-      console.log("No authenticated user found.");
-      return;
-  }
-
-  const userAuthId = auth.currentUser.uid; // Get the current user's UID
-
-  try {
-      // Query Firestore to find the document where uid == auth.currentUser.uid
-      const q = query(collection(database, "users"), where("uid", "==", userAuthId));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-          querySnapshot.forEach(async (document) => {
-              const userDocRef = doc(database, "users", document.id); // Get document reference
-              await updateDoc(userDocRef, newData);
-              console.log("User document updated successfully!");
-          });
-      } else {
-          console.log("No Firestore document found for this UID.");
-      }
-  } catch (error) {
-      console.error("Error updating user document:", error);
-  }
-};
 
 
-updateUserDocument({ designation: "Senior Developer" });
+
 
 
   useEffect(() => {
@@ -75,6 +49,33 @@ updateUserDocument({ designation: "Senior Developer" });
     // console.log(orgData);
     await createOrganization();
   }
+  const updateUserDocument = async (newData) => {
+    if (!auth.currentUser) {
+        console.log("No authenticated user found.");
+        return;
+    }
+  
+    const userAuthId = auth.currentUser.uid; // Get the current user's UID
+  
+    try {
+        // Query Firestore to find the document where uid == auth.currentUser.uid
+        const q = query(collection(database, "users"), where("uid", "==", userAuthId));
+        const querySnapshot = await getDocs(q);
+  
+        if (!querySnapshot.empty) {
+            querySnapshot.forEach(async (document) => {
+                const userDocRef = doc(database, "users", document.id); // Get document reference
+                await updateDoc(userDocRef, newData);
+                console.log("User document updated successfully!");
+            });
+        } else {
+            console.log("No Firestore document found for this UID.");
+        }
+    } catch (error) {
+        console.error("Error updating user document:", error);
+    }
+  };
+  
 
   const createOrganization = async () => {
     try {
@@ -100,19 +101,7 @@ updateUserDocument({ designation: "Senior Developer" });
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      const userRef = doc(database, "users", user.uid);
-      const  userSnap = await getDoc(userRef);
-      console.log("Updating user document at:", userRef.path);
-      console.log("User data:", userSnap.data());
-      const existedOrganizations = userSnap.data().createOrganizations || [];
-      console.log(existedOrganizations)
-      // if(!userSnap.empty){
-      //   const existedOrganizations = userSnap.data().createOrganizations || [];
-      //   await updateDoc(userRef, {
-      //     createdOrganizations: [...existedOrganizations, orgData.organizationName],
-      //     updatedAt: serverTimestamp(),
-      //   })
-      // }
+      updateUserDocument({ createdOrganizations: arrayUnion(orgData.organizationName), updatedAt: serverTimestamp() });
  
       console.log("Document written with ID: ", docRef.id);
       console.log("Updated user document");
