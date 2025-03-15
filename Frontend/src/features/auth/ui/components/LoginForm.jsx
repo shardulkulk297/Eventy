@@ -101,6 +101,7 @@ export function LoginForm() {
         type: "student",
         registeredEvents: [],
         createdEvents: [],
+        createdOrganizations: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })

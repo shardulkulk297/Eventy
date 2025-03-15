@@ -5,7 +5,7 @@ import { Label } from '../../../../shared/ui/label';
 import { Select } from '../../../../shared/ui/select';
 import { Button } from '../../../../shared/ui/button';
 import { Datepicker } from 'flowbite-datepicker';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { database } from '@/firebaseConfig';
 import toast from 'react-hot-toast';
 import MultiSelect from '../../../../shared/ui/MultiSelect';
@@ -80,7 +80,7 @@ const RegisterData = () => {
         designation: registerData.designation,
         type: registerData.type,
         userInterests: registerData.userInterests,
-        updatedAt: new Date(),
+        updatedAt: serverTimestamp(),
       });
       toast.success("Data Registered Successfully");
       navigate('/posts');
