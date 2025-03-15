@@ -116,8 +116,7 @@ const RegisterData = () => {
     <div>
       <main className='flex flex-col items-center justify-center h-screen'>
         <div>
-          <h1 className='text-2xl font-bold'>Register Data</h1>
-          <p className='text-sm text-gray-500'>Please fill in the form</p>
+        
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="age">Age</Label>
