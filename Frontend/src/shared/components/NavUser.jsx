@@ -1,6 +1,6 @@
 "use client";
 import toast from 'react-hot-toast'
-import { onAuthStateChanged, getAuth } from 'firebase/auth';
+import { onAuthStateChanged, getAuth, signOut } from 'firebase/auth';
 import {
   BadgeCheck,
   Bell,
@@ -32,14 +32,16 @@ import {
 } from "@/shared/ui/sidebar";
 import { useEffect, useState } from "react";
 import {app} from "../../firebaseConfig";
+import { Button } from '../ui/button';
 
 export function NavUser() {
   const { isMobile } = useSidebar();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const auth = getAuth(app);
 
   useEffect(()=>{
-    const auth = getAuth(app);
+  
 
     const getCurrentUser = onAuthStateChanged(auth, (currentUser)=>{
       // console.log(currentUser);
@@ -58,6 +60,21 @@ export function NavUser() {
     console.log("No user found");
     return null;
   };
+
+  const handleLogOut = async()=>{
+
+    try {
+      await signOut(auth);
+      toast.success("Logged out successfully");
+      
+    } catch (error) {
+      console.log(error);
+      toast.error("Error logging out");
+    }
+   
+
+  }
+
 
  
 
@@ -106,28 +123,29 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles />
-                Update Profile
+                <Button>Update Profile</Button>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />
-                Your Profile
+                <Button>Your Profile</Button> 
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <CreditCard />
-                Billing
+                <Button>Billing</Button>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell />
-                Notifications
+                <Button>Notifications</Button>
+                
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <LogOut />
-              Log out
+              <Button onClick={handleLogOut} >Log out</Button>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
