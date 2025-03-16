@@ -8,10 +8,22 @@ import {
 import CreateNewPost from '../../features/CreateEvent/CreateEvent'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../ui/button'
+import {getAuth, onAuthStateChanged} from "firebase/auth";
+import { useEffect, useState } from 'react'
+import {app, storage} from "../../firebaseConfig";
 
 const Navbar = () => {
 
     const navigate = useNavigate();
+    const auth = getAuth(app);
+    const [user, setUser] = useState({});
+
+    useEffect(()=>{
+        const unsubscribe = onAuthStateChanged(auth, (currentUser)=>{
+            setUser(currentUser);
+        })
+        return()=> unsubscribe();
+    })
 
     const newEvent = () => {
 
@@ -23,7 +35,7 @@ const Navbar = () => {
     }
 
     return (
-        <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6 w-full">
+        <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 h-26 flex items-center justify-between px-4 md:px-6 w-full">
             <div className="flex-1">
                 <div className=" flex justify-start items-center">
                     <Input type="text" placeholder="Search for events..." className="w-full max-w-md" />
@@ -46,7 +58,7 @@ const Navbar = () => {
                 </button>
 
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src="https://api.dicebear.com/7.x/pixel-art/svg?seed=John" alt="User Avatar" />
+                    <AvatarImage src={user?.photoURL || 'E'} alt="User Avatar" />
                     <AvatarFallback>UN</AvatarFallback>
                 </Avatar>
             </div>
