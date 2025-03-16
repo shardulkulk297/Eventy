@@ -288,7 +288,7 @@ export function LoginForm() {
                   accept="image/*"
                   placeholder="imageFile"
                   value={registerData.imageFile}
-                  onChange={(e) => handleChange(e, setRegisterData)}
+                  onChange={(e) => setRegisterData({ ...registerData, imageFile: e.target.files[0] })}
                   required
                 />
               </div>

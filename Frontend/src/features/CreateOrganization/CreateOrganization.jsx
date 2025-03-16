@@ -11,7 +11,7 @@ import { useEffect } from 'react'
 import toast from 'react-hot-toast'
 
 
-const CreateOrganization = () => {
+ const CreateOrganization = () => {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
 
@@ -58,7 +58,6 @@ const CreateOrganization = () => {
     const userAuthId = auth.currentUser.uid; // Get the current user's UID
   
     try {
-        // Query Firestore to find the document where uid == auth.currentUser.uid
         const q = query(collection(database, "users"), where("uid", "==", userAuthId));
         const querySnapshot = await getDocs(q);
   
@@ -114,7 +113,7 @@ const CreateOrganization = () => {
     }
   }
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gray-10 p-4">
       <div className="w-full max-w-lg bg-white shadow-lg rounded-lg p-6">
         <h1 className="text-3xl font-semibold text-center text-gray-800">Create Organization</h1>
         <p className="text-center text-gray-500 mb-4">Fill in the form to register</p>
@@ -148,7 +147,7 @@ const CreateOrganization = () => {
             />
           </div>
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-            Create Organization
+            Create  Organization
           </Button>
         </form>
       </div>
