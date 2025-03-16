@@ -14,11 +14,12 @@ import {
 } from "../../../../shared/ui/select";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import {app, database} from "../../../../firebaseConfig";
+import {app, database, storage} from "../../../../firebaseConfig";
 import { collection, serverTimestamp } from "firebase/firestore";
 import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile} from "firebase/auth";
 import { addDoc } from "firebase/firestore";
 import { Avatar } from "@radix-ui/react-avatar";
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 
 
 
@@ -64,58 +65,61 @@ export function LoginForm() {
 
   const registerUser = async()=>{
 
-    // if(registerData.password !== registerData.confirmPassword){
-    //   toast.error("Passwords do not match"); 
-    //   return;
-    // }
+    if(registerData.password !== registerData.confirmPassword){
+      toast.error("Passwords do not match"); 
+      return;
+    }
 
-    // try {
-    //   const response = await createUserWithEmailAndPassword(
-    //     auth,
-    //     registerData.email, 
-    //     registerData.password
-    //   )
+    try {
+      const response = await createUserWithEmailAndPassword(
+        auth,
+        registerData.email, 
+        registerData.password
+      )
 
-    //   const user = response.user;
+      const user = response.user;
 
-    //   let imageURL = "https://api.dicebear.com/7.x/avatars/svg";
+      let imageURL = "https://api.dicebear.com/7.x/avatars/svg";
 
-    //   // if(registerData.imageFile){
-    //   //to be done when firebase storage is setup
-    //   // }
+      if(registerData.imageFile){
+        const storageRef = ref(storage, registerData.imageFile.name);
+        const uploadTaskSnapshot = await uploadBytesResumable(storageRef, registerData.imageFile);
+        imageURL = await getDownloadURL(uploadTaskSnapshot.ref);
+        console.log("File uploaded successfully", imageURL);
+      }
 
-    //   await updateProfile(user, {
-    //     displayName: registerData.displayName,
-    //     photoURL: imageURL
-    //   })
+      await updateProfile(user, {
+        displayName: registerData.displayName,
+        photoURL: imageURL
+      })
 
-    //   const docRef = await addDoc(dbInstance, {
-    //     uid: user.uid,
-    //     displayName: registerData.displayName,
-    //     email: registerData.email,
-    //     photoURL: imageURL,
-    //     userInterests: [],
-    //     age: null,
-    //     collegeUniversity: null,
-    //     designation: null,
-    //     type: "student",
-    //     registeredEvents: [],
-    //     createdEvents: [],
-    //     createdOrganizations: [],
-    //     createdAt: serverTimestamp(),
-    //     updatedAt: serverTimestamp(),
-    //   })
+      const docRef = await addDoc(dbInstance, {
+        uid: user.uid,
+        displayName: registerData.displayName,
+        email: registerData.email,
+        photoURL: imageURL,
+        userInterests: [],
+        age: null,
+        collegeUniversity: null,
+        designation: null,
+        type: "student",
+        registeredEvents: [],
+        createdEvents: [],
+        createdOrganizations: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
 
-    //   toast.success("Registration Successful"); //passing document Id
+      toast.success("Registration Successful"); //passing document Id
 
-    //   goToRegisterData(docRef.id);
+      goToRegisterData(docRef.id);
       
-    // } catch (error) {
-    //   toast.error(error.message);
-    //   console.log(error)
+    } catch (error) {
+      toast.error(error.message);
+      console.log(error)
 
       
-    // }
+    }
 
    
   }
@@ -145,7 +149,7 @@ export function LoginForm() {
 
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
-    console.log(registerData.imageFile)
+    // console.log(registerData.imageFile)
 
   }
 
@@ -288,7 +292,6 @@ export function LoginForm() {
                   type="file"
                   accept="image/*"
                   placeholder="imageFile"
-                  value={registerData.imageFile}
                   onChange={(e) => setRegisterData({ ...registerData, imageFile: e.target.files[0] })}
                   required
                 />
