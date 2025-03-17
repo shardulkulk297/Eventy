@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Button } from '@/shared/ui/button'
@@ -22,11 +22,6 @@ const CreateOrganization = () => {
   const auth = getAuth(app);
   const dbInstance = collection(database, "organizations");
 
-
-
-
-
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -39,6 +34,7 @@ const CreateOrganization = () => {
     return () => unsubscribe();
   }, [auth])
 
+
   const [orgData, setOrgData] = useState({
     organizationName: '',
     organizationDesc: '',
@@ -50,6 +46,59 @@ const CreateOrganization = () => {
     createdAt: '',
     updatedAt: '',
   })
+  // const isVerifiedRef = useRef(false);
+  // useEffect(() => {
+  //   if (!user) {
+  //     return;
+  //   }
+
+   
+
+  //   const checkVerificationStatus = async () => {
+  //     try {
+  //       const orgQuery = query(collection(database, "organizations"), where("creatorId", "==", user.uid));
+  //       const querySnapshot = await getDocs(orgQuery);
+  
+  //       if (!querySnapshot.empty) {
+  //         querySnapshot.forEach(async (docSnap) => {
+  //           const orgData = docSnap.data();
+  //           setOrgData(orgData);
+  //           console.log(orgData);
+  
+  //           if (orgData.verificationStatus === 'verified' && !isVerifiedRef.current) {
+  //             isVerifiedRef.current = true;
+  //             toast.success('Organization is Verified');
+  
+  //             setTimeout(() => {
+  //               window.location.reload();
+  //             }, 1000);
+  //           }
+
+  //         })
+  //       }
+
+  //     } catch (error) {
+  //       console.log(error);
+
+  //     }
+
+    
+
+  //     // 2*60*60*1000
+  //   }
+  //   const intervalId = setInterval(()=>{
+  //     if(!isVerifiedRef.current){
+  //       checkVerificationStatus();
+  //     }
+  //     else{
+  //       clearInterval(intervalId);
+  //     }
+  //   },2*60*60*1000);
+  //   return () => clearInterval(intervalId);
+
+  // }, [user]);
+
+
 
   const fetchOrganizations = async (uid) => {
     try {
