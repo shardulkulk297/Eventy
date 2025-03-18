@@ -2,7 +2,7 @@ import React, { useRef } from 'react'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Button } from '@/shared/ui/button'
-import { useState } from 'react'
+import { useState } from 'react';
 import { getAuth } from "firebase/auth";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth'
@@ -17,7 +17,7 @@ import { getDownloadURL } from 'firebase/storage'
 const CreateOrganization = () => {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
-  const [organizations, setOrganizations] = useState([]);
+ 
 
   const auth = getAuth(app);
   const dbInstance = collection(database, "organizations");
@@ -46,7 +46,7 @@ const CreateOrganization = () => {
     createdAt: '',
     updatedAt: '',
   })
-  // const isVerifiedRef = useRef(false);
+ 
   // useEffect(() => {
   //   if (!user) {
   //     return;
@@ -65,13 +65,13 @@ const CreateOrganization = () => {
   //           setOrgData(orgData);
   //           console.log(orgData);
   
-  //           if (orgData.verificationStatus === 'verified' && !isVerifiedRef.current) {
-  //             isVerifiedRef.current = true;
+  //           if (orgData.verificationStatus === 'verified') {
   //             toast.success('Organization is Verified');
-  
+  //             clearInterval(intervalId);
   //             setTimeout(() => {
   //               window.location.reload();
-  //             }, 1000);
+  //             }, 100);
+              
   //           }
 
   //         })
@@ -86,34 +86,15 @@ const CreateOrganization = () => {
 
   //     // 2*60*60*1000
   //   }
-  //   const intervalId = setInterval(()=>{
-  //     if(!isVerifiedRef.current){
-  //       checkVerificationStatus();
-  //     }
-  //     else{
-  //       clearInterval(intervalId);
-  //     }
-  //   },2*60*60*1000);
+
+  //   let intervalId= setInterval(checkVerificationStatus(), 10*1000);
   //   return () => clearInterval(intervalId);
 
   // }, [user]);
 
 
 
-  const fetchOrganizations = async (uid) => {
-    try {
-      const q = query(collection(database, "organizations"), where("creatorId", "==", uid));
-      const querySnapshot = await getDocs(q);
-      const orgList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setOrganizations(orgList);
-
-    } catch (error) {
-      console.log(error);
-      toast.error("Error fetching organizations");
-
-    }
-
-  }
+ 
 
   const handleOrgSubmit = async (e) => {
     e.preventDefault()
@@ -217,22 +198,7 @@ const CreateOrganization = () => {
   }
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-10 p-4">
-      <div className='w-full max-w-lg bg-white shadow-lg rounded-lg p-6 mb-6'>
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Your Organizations</h2>
-        {organizations.length === 0 ? (
-          <p className="text-gray-500">No organizations found.</p>
-        ) : (
-          organizations.map(org => (
-            <div key={org.id} className="border p-4 rounded-lg mb-2">
-              <h3 className="font-bold text-lg">{org.organizationName}</h3>
-              {/* <p className="text-gray-600">{org.organizationDesc}</p> */}
-              <p className={`mt-2 text-sm font-semibold ${org.verificationStatus === 'verified' ? 'text-green-600' : 'text-yellow-500'}`}>
-                {org.verificationStatus === 'verified' ? "✔ Verified" : "⏳ Pending Verification"}
-              </p>
-            </div>
-          ))
-        )}
-      </div>
+     
 
 
       <div className="w-full max-w-lg bg-white shadow-lg rounded-lg p-6">

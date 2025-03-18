@@ -17,6 +17,8 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {app, database} from "./firebaseConfig";
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import YourOrganizations from './features/CreateOrganization/pages/YourOrganizations'
+import AdminDashboard from './features/CreateOrganization/pages/AdminDashboard'
 function App() {
 
   const auth = getAuth(app);
@@ -42,7 +44,9 @@ function App() {
           <Route path='hackathons' element={<Hackathons />} />
           <Route path='upcoming' element={<Upcoming />} />
           <Route path='settings' element={<Settings />} />
-          <Route path='host' element={<Host />} />
+          <Route path='yourOrg' element={<YourOrganizations />} />
+          <Route path='adminDashboard' element={<AdminDashboard />} />
+          
 
         </Route>
 

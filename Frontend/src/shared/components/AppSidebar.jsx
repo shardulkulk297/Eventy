@@ -32,8 +32,8 @@ const AppSidebar = () => {
       icon: Settings
     },
     {
-      title: "Host Event",
-      url: '/posts/host',
+      title: "Your Organizations",
+      url: '/posts/yourOrg',
       icon: Megaphone
     }
   ]
