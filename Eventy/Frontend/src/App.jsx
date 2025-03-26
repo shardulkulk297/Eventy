@@ -19,16 +19,17 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import YourOrganizations from './features/CreateOrganization/pages/YourOrganizations'
 import AdminDashboard from './features/CreateOrganization/pages/AdminDashboard'
-import Dashboard from './features/CreateEvent/pages/Dashboard'
-import Builder from './features/CreateEvent/pages/Builder'
-import Preview from './features/CreateEvent/pages/Preview'
-import Responses from './features/CreateEvent/pages/Responses'
-import NotFound from './features/CreateEvent/pages/NotFound'
+import FormDashboard from './features/CreateEvent/pages/Dashboard'
+import FormBuilder from './features/CreateEvent/pages/Builder'
+import FormPreview from './features/CreateEvent/pages/Preview'
+import FormResponses from './features/CreateEvent/pages/Responses'
+import FormNotFound from './features/CreateEvent/pages/NotFound'
 
 
 function App() {
 
   const auth = getAuth(app);
+  const Navigate = useNavigate();
 
   return (
     <>
@@ -53,11 +54,14 @@ function App() {
           <Route path='settings' element={<Settings />} />
           <Route path='yourOrg' element={<YourOrganizations />} />
           <Route path='adminDashboard' element={<AdminDashboard />} />
-          <Route path='createevent' element={<CreateEvent />} />
-
-
+          <Route path='createevent' element={<Navigate to="/posts/builder/new" replace />} />
+          <Route path='builder/:formId' element={<FormBuilder />} />
+          <Route path='forms' element={<FormDashboard />} />
+          <Route path='preview/:formId' element={<FormPreview />} />
+          <Route path='responses/:formId' element={<FormResponses />} />
         </Route>
 
+        <Route path="*" element={<FormNotFound />} /> 
       
 
         

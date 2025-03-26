@@ -1,118 +1,48 @@
+/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Eventy's Flowbite imports */
 @import 'flowbite';
 @import 'flowbite/dist/datepicker.css';
 
-/* ... */
+/* --- Base Layer --- */
 @layer base {
-  :root {
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  /* Theme variables (Default) - Merged, Form Builder's might take precedence */
+  :root, .theme-default {
+    --background: 0 0% 100%; /* Form Builder's default */
+    --foreground: 215 25% 27%; /* Form Builder's default */
 
-  .dark {
-    --sidebar-background: 240 10% 3.9%;  /* This is the correct dark background */
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
+    --card: 0 0% 100%; /* Form Builder's default */
+    --card-foreground: 215 25% 27%; /* Form Builder's default */
 
+    --popover: 0 0% 100%; /* Form Builder's default */
+    --popover-foreground: 215 25% 27%; /* Form Builder's default */
 
+    /* Using Form Builder's Primary/Accent colors as default */
+    --primary: 217 89% 61%;
+    --primary-foreground: 210 40% 98%;
 
-@layer utilities {
-  .bg-background {
-    background-color: hsl(var(--background));
-  }
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-  .text-foreground {
-    color: hsl(var(--foreground));
-  }
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-  /* Add these new utility classes */
-  .bg-sidebar {
-    background-color: hsl(var(--sidebar-background));
-  }
-
-  .text-sidebar-foreground {
-    color: hsl(var(--sidebar-foreground));
-  }
-
-  .bg-sidebar-accent {
-    background-color: hsl(var(--sidebar-accent));
-  }
-
-  .text-sidebar-accent-foreground {
-    color: hsl(var(--sidebar-accent-foreground));
-  }
-}
-
-
-@layer base {
-  :root {
-
-    --background: 0 0% 100%;
-
-    --foreground: 240 10% 3.9%;
-
-    --card: 0 0% 100%;
-
-    --card-foreground: 240 10% 3.9%;
-
-    --popover: 0 0% 100%;
-
-    --popover-foreground: 240 10% 3.9%;
-
-    --primary: 240 5.9% 10%;
-
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 240 4.8% 95.9%;
-
-    --secondary-foreground: 240 5.9% 10%;
-
-    --muted: 240 4.8% 95.9%;
-
-    --muted-foreground: 240 3.8% 46.1%;
-
-    --accent: 240 4.8% 95.9%;
-
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 217 89% 61%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --destructive-foreground: 0 0% 98%;
+    --border: 214.3 31.8% 91.4%; /* Form Builder's default */
+    --input: 214.3 31.8% 91.4%; /* Form Builder's default */
+    --ring: 217 89% 61%; /* Form Builder's default */
 
-    --border: 240 5.9% 90%;
+    --radius: 0.5rem; /* Eventy's original radius */
 
-    --input: 240 5.9% 90%;
-
-    --ring: 240 10% 3.9%;
-
-    --chart-1: 12 76% 61%;
-
-    --chart-2: 173 58% 39%;
-
-    --chart-3: 197 37% 24%;
-
-    --chart-4: 43 74% 66%;
-
-    --chart-5: 27 87% 67%;
-
-    --radius: 0.5rem;
-
+    /* Eventy's Sidebar Variables (Kept) */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -121,59 +51,72 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Eventy's Chart Variables (Kept) */
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
   }
 
+  /* Form Builder Theme Variants */
+  .theme-purple {
+    --primary: 267 83% 60%;
+    --primary-foreground: 210 40% 98%;
+    --accent: 267 83% 60%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --ring: 267 83% 60%;
+  }
+
+  .theme-green {
+    --primary: 142 76% 36%;
+    --primary-foreground: 210 40% 98%;
+    --accent: 142 76% 36%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --ring: 142 76% 36%;
+  }
+
+  .theme-orange {
+    --primary: 21 90% 48%;
+    --primary-foreground: 210 40% 98%;
+    --accent: 21 90% 48%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --ring: 21 90% 48%;
+  }
+
+  .theme-blue {
+    --primary: 217 89% 61%;
+    --primary-foreground: 210 40% 98%;
+    --accent: 217 89% 61%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --ring: 217 89% 61%;
+  }
+
+  /* Dark Mode Variables (Merged - Form Builder's might take precedence) */
   .dark {
-
-    --background: 240 10% 3.9%;
-
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
-
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
-
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
-
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-
-    --accent-foreground: 0 0% 98%;
-
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 89% 61%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217 89% 61%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
 
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-
-    --input: 240 3.7% 15.9%;
-
-    --ring: 240 4.9% 83.9%;
-
-    --chart-1: 220 70% 50%;
-
-    --chart-2: 160 60% 45%;
-
-    --chart-3: 30 80% 55%;
-
-    --chart-4: 280 65% 60%;
-
-    --chart-5: 340 75% 55%;
-
-    --sidebar-background: 240 10% 3.9%;  /* This needs to match the value above */
+    /* Eventy's Dark Sidebar Variables (Kept) */
+    --sidebar-background: 240 10% 3.9%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -181,26 +124,84 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Eventy's Dark Chart Variables (Kept) */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-
-
-@layer base {
+  /* Global border and outline settings (merged) */
   * {
     @apply border-border outline-ring/50;
   }
+
+  /* Default body styles using Form Builder's background/font settings */
   body {
-    @apply bg-background text-foreground;
+    @apply bg-form-light-gray text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Form Builder Heading Styles */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+  h1 { @apply text-3xl md:text-4xl; }
+  h2 { @apply text-2xl md:text-3xl; }
+  h3 { @apply text-xl md:text-2xl; }
+
+  /* Form Builder Input Focus Styles */
+  input, textarea, select {
+    @apply focus:outline-none focus:ring-2 focus:ring-form-accent-blue focus:ring-opacity-50 transition-all duration-200;
   }
 }
+/* --- End Base Layer --- */
+
+
+/* --- Utilities Layer (Kept Eventy's sidebar utilities) --- */
+@layer utilities {
+  .bg-background { background-color: hsl(var(--background)); }
+  .text-foreground { color: hsl(var(--foreground)); }
+  /* Sidebar specific utilities from Eventy */
+  .bg-sidebar { background-color: hsl(var(--sidebar-background)); }
+  .text-sidebar-foreground { color: hsl(var(--sidebar-foreground)); }
+  .bg-sidebar-accent { background-color: hsl(var(--sidebar-accent)); }
+  .text-sidebar-accent-foreground { color: hsl(var(--sidebar-accent-foreground)); }
+}
+/* --- End Utilities Layer --- */
+
+
+/* --- Components Layer (Added from Form Builder) --- */
+@layer components {
+  .card-hover { @apply transition-all duration-200 hover:shadow-elevation-2 hover:-translate-y-1; }
+  .button-hover { @apply transition-all duration-200 hover:shadow-subtle active:translate-y-0.5; }
+  .glass-panel { @apply bg-white bg-opacity-70 backdrop-blur-lg border border-white border-opacity-20 shadow-subtle; }
+  .question-container { @apply p-6 rounded-lg border border-form-card-border mb-4 bg-white transition-all duration-300 hover:shadow-elevation-1; }
+  .question-container.selected { @apply border-l-4 border-l-form-accent-blue border-t-form-card-border border-r-form-card-border border-b-form-card-border shadow-blue-glow; } /* Adjusted selection style */
+  .form-input-animated { @apply transition-all duration-200 border-b-2 border-transparent focus:border-form-accent-blue; }
+  .fade-in-animation { animation: fadeIn 0.3s ease-in-out forwards; } /* Ensure 'fadeIn' keyframe exists */
+  /* Page Transition Classes */
+  .page-transition-enter { opacity: 0; transform: translateY(10px); }
+  .page-transition-enter-active { opacity: 1; transform: translateY(0); transition: opacity 300ms, transform 300ms; }
+  .page-transition-exit { opacity: 1; transform: translateY(0); }
+  .page-transition-exit-active { opacity: 0; transform: translateY(-10px); transition: opacity 300ms, transform 300ms; }
+}
+/* --- End Components Layer --- */
+
+
+/* --- Custom Scrollbar & Focus Styles (Added from Form Builder) --- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Global focus-visible style */
+*:focus-visible {
+  outline: 2px solid theme('colors.form.accent-blue');
+  outline-offset: 2px;
+}
+/* --- End Custom Styles --- */

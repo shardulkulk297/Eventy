@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useTheme } from '@/context/ThemeContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useTheme } from '@/features/CreateEvent/context/ThemeContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Paintbrush, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 

@@ -1,9 +1,8 @@
-import React from 'react'
+import React from 'react';
+import FormResponses from '@/features/CreateEvent/components/FormResponses';
 
 const Responses = () => {
-  return (
-    <div>Responses</div>
-  )
-}
+  return <FormResponses />;
+};
 
-export default Responses
+export default Responses;

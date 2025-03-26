@@ -1,9 +1,8 @@
-import React from 'react'
+import React from 'react';
+import FormBuilder from '@/features/CreateEvent/components/FormBuilder';
 
 const Builder = () => {
-  return (
-    <div>Builder</div>
-  )
-}
+  return <FormBuilder />;
+};
 
-export default Builder
+export default Builder;

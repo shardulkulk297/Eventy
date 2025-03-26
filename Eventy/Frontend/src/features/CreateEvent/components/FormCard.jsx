@@ -4,13 +4,13 @@ import { Card } from '@/components/ui/card';
 import { MoreHorizontal, Trash2, Calendar, Clock3, Edit, Eye, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { useForm } from '@/context/FormContext';
+import { useForm } from '@/features/CreateEvent/context/FormContext';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+} from '@/shared/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 const FormCard = ({

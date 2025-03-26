@@ -1,9 +1,8 @@
-import React from 'react'
+import React from 'react';
+import FormPreview from '@/features/CreateEvent/components/FormPreview';
 
 const Preview = () => {
-  return (
-    <div>Preview</div>
-  )
-}
+  return <FormPreview />;
+};
 
-export default Preview
+export default Preview;
