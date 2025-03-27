@@ -23,11 +23,11 @@ const Navbar = () => {
             setUser(currentUser);
         })
         return()=> unsubscribe();
-    })
+    }, [])
 
     const newEvent = () => {
 
-        navigate('/posts/createevent')
+        navigate('/posts/builder/new')
 
     }
     const newOrg = ()=>{
@@ -58,8 +58,8 @@ const Navbar = () => {
                 </button>
 
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.photoURL || 'E'} alt="User Avatar" />
-                    <AvatarFallback>UN</AvatarFallback>
+                <AvatarImage src={user?.photoURL} alt={user?.displayName || 'User Avatar'} />
+                <AvatarFallback>{user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
                 </Avatar>
             </div>
         </div>

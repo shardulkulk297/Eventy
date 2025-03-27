@@ -7,7 +7,9 @@ import {
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  LucideOctagonPause,
   Sparkles,
+  User
 } from "lucide-react";
 
 import {
@@ -34,6 +36,7 @@ import { useEffect, useState } from "react";
 import {app} from "../../firebaseConfig";
 import { Button } from '../ui/button';
 
+
 export function NavUser() {
   const { isMobile } = useSidebar();
   const [user, setUser] = useState(null);
@@ -43,17 +46,17 @@ export function NavUser() {
   useEffect(()=>{
   
 
-    const getCurrentUser = onAuthStateChanged(auth, (currentUser)=>{
+    const unsubscribe = onAuthStateChanged(auth, (currentUser)=>{
       // console.log(currentUser);
       
       setUser(currentUser);
       setLoading(false);
     })
-    return getCurrentUser
-  }, [])
+    return ()=> unsubscribe();
+  }, [auth])
 
   if(loading){
-    return <div>Loading...</div>
+    return <div className="p-2">Loading...</div>
   }
 
   if (!user){
@@ -75,6 +78,19 @@ export function NavUser() {
 
   }
 
+  const handleBilling = ()=>{
+    console.log("billing");
+    
+  }
+  
+  const handleViewProfile = ()=>{
+
+  }
+
+  const handleNotifications = ()=>{
+
+  }
+
 
  
 
@@ -91,8 +107,10 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarImage src={user?.photoURL || 'https://api.dicebear.com/7.x/avatars/svg'} alt={user?.displayName || 'User'} />
-                <AvatarFallback className="rounded-lg">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+              <AvatarImage src={user?.photoURL} alt={user?.displayName || 'User'} />
+              <AvatarFallback className="rounded-lg">
+                  {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.displayName}</span>
@@ -110,8 +128,10 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.photoURL} alt={user.displayName} />
-                  
+                <AvatarImage src={user?.photoURL} alt={user?.displayName || 'User'} />
+                <AvatarFallback className="rounded-lg">
+                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{user.displayName}</span>
@@ -121,31 +141,26 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                <Button>Update Profile</Button>
+              {/* --- FIX: Made DropdownMenuItem clickable directly --- */}
+              <DropdownMenuItem onClick={handleViewProfile}>
+                <User className="mr-2 h-4 w-4" /> {/* Changed Icon */}
+                <span>Your Profile</span>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleBilling}>
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Billing</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleNotifications}>
+                <Bell className="mr-2 h-4 w-4" />
+                <span>Notifications</span>
+              </DropdownMenuItem>
+              {/* --- END FIX --- */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                <Button>Your Profile</Button> 
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                <Button>Billing</Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                <Button>Notifications</Button>
-                
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
-              <Button onClick={handleLogOut} >Log out</Button>
+            {/* --- FIX: Made DropdownMenuItem clickable directly --- */}
+            <DropdownMenuItem onClick={handleLogOut} className="text-red-600 focus:bg-red-100 focus:text-red-700">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

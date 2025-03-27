@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast'
 import Layout from './shared/components/Layout'
 import Hackathons from './pages/Hackathons'
 import Upcoming from './pages/Upcoming'
-import { Settings } from 'lucide-react'
+import Settings from './pages/Settings'
 import Host from './pages/Host'
 import RegisterData from './features/auth/ui/pages/RegisterData'
 import CreateEvent from './features/CreateEvent/CreateEvent'
@@ -24,12 +24,12 @@ import FormBuilder from './features/CreateEvent/pages/Builder'
 import FormPreview from './features/CreateEvent/pages/Preview'
 import FormResponses from './features/CreateEvent/pages/Responses'
 import FormNotFound from './features/CreateEvent/pages/NotFound'
-
+import { Navigate } from 'react-router-dom'
 
 function App() {
 
   const auth = getAuth(app);
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
 
   return (
     <>
