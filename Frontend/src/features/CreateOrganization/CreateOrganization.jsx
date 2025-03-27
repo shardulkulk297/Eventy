@@ -149,7 +149,7 @@ const CreateOrganization = () => {
          logoFile: null,
          verificationFile: null,
        });
-      // navigate('/posts/yourOrg'); // Navigate to organizations list
+      navigate('/posts/yourOrg'); // Navigate to organizations list
 
     } catch (e) {
       setError(e.message || "Failed to create organization.");
@@ -218,8 +218,9 @@ const CreateOrganization = () => {
               accept=".pdf" // Accept only PDF files
               onChange={handleOrgChange} // Use generic handler
               className="dark:bg-gray-700 dark:border-gray-600 dark:text-white file:text-gray-400"
+              required
             />
-             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional. Uploading a verification letter (e.g., from your institution) helps confirm your organization's legitimacy.</p>
+             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Uploading a verification letter (e.g., from your institution) helps confirm your organization's legitimacy.</p>
           </div>
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600" disabled={loading}>
             {loading ? 'Creating...' : 'Create Organization'}
