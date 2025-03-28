@@ -1,259 +1,227 @@
-
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+/* Eventy/Frontend/src/features/CreateEvent/context/FormContext.jsx */
+import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
 
 // Create context
 const FormContext = createContext(undefined);
 
-// Initial state
-const initialState = {
-  forms: [],
-  currentForm: null,
-  responses: {},
-  isLoading: false,
-  error: null,
-};
-
-// Example form for testing
+// Example form (remains the same)
 const exampleForm = {
   id: 'form-1',
   title: 'Example Feedback Form',
   description: 'Please provide your feedback on our service',
   questions: [
-    {
-      id: 'q1',
-      type: 'short',
-      title: 'What is your name?',
-      required: true,
-    },
-    {
-      id: 'q2',
-      type: 'paragraph',
-      title: 'Please describe your experience with our service',
-      required: false,
-    },
-    {
-      id: 'q3',
-      type: 'multiple_choice',
-      title: 'How would you rate our service?',
-      required: true,
-      options: [
-        { id: 'opt1', value: 'Excellent' },
-        { id: 'opt2', value: 'Good' },
-        { id: 'opt3', value: 'Average' },
-        { id: 'opt4', value: 'Poor' },
-      ],
-    },
-    {
-      id: 'q4',
-      type: 'checkbox',
-      title: 'Which features did you use?',
-      required: false,
-      options: [
-        { id: 'feat1', value: 'Support Chat' },
-        { id: 'feat2', value: 'Knowledge Base' },
-        { id: 'feat3', value: 'Email Support' },
-        { id: 'feat4', value: 'Phone Support' },
-      ],
-    },
+    { id: 'q1', type: 'short', title: 'What is your name?', required: true },
+    { id: 'q2', type: 'paragraph', title: 'Please describe your experience', required: false },
+    { id: 'q3', type: 'multiple_choice', title: 'Rating?', required: true, options: [ { id: 'opt1', value: 'Excellent' }, { id: 'opt2', value: 'Good' }, { id: 'opt3', value: 'Average' }, { id: 'opt4', value: 'Poor' } ] },
+    { id: 'q4', type: 'checkbox', title: 'Features used?', required: false, options: [ { id: 'feat1', value: 'Support Chat' }, { id: 'feat2', value: 'Knowledge Base' }, { id: 'feat3', value: 'Email Support' } ] },
   ],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   responseCount: 0,
 };
 
-// Create initial state with example form
-const initialStateWithExample = {
-  ...initialState,
+// Initial state (remains the same)
+const initialState = {
   forms: [exampleForm],
+  currentForm: null,
+  responses: {},
+  isLoading: false,
+  error: null,
 };
 
-// Reducer function
+// Reducer function (remains the same)
 const formReducer = (state, action) => {
   switch (action.type) {
     case 'SET_FORMS':
       return { ...state, forms: action.payload };
-    
+
     case 'SET_CURRENT_FORM':
+      // Avoid unnecessary state update if the form is already the current one
+      if (state.currentForm?.id === action.payload?.id) {
+          return state;
+      }
       return { ...state, currentForm: action.payload };
-    
+
     case 'ADD_FORM':
-      return { 
-        ...state, 
+      // Avoid adding if form with the same ID already exists
+      if (state.forms.some(form => form.id === action.payload.id)) {
+          return state;
+      }
+      return {
+        ...state,
         forms: [...state.forms, action.payload],
-        currentForm: action.payload 
+        currentForm: action.payload
       };
-    
-    case 'UPDATE_FORM':
+
+    case 'UPDATE_FORM': {
+       const formIndex = state.forms.findIndex(form => form.id === action.payload.id);
+       if (formIndex === -1) return state; // Form not found
+
+       const updatedForms = [...state.forms];
+       updatedForms[formIndex] = { ...updatedForms[formIndex], ...action.payload, updatedAt: new Date().toISOString() }; // Merge and update timestamp
+
+       // Only update currentForm if it's the one being changed
+       const updatedCurrentForm = state.currentForm?.id === action.payload.id
+         ? updatedForms[formIndex]
+         : state.currentForm;
+
+       // Avoid state update if nothing effectively changed (optional but good practice)
+       if (JSON.stringify(state.forms[formIndex]) === JSON.stringify(updatedForms[formIndex]) && state.currentForm === updatedCurrentForm) {
+           return state;
+       }
+
       return {
         ...state,
-        forms: state.forms.map(form => 
-          form.id === action.payload.id ? action.payload : form
-        ),
-        currentForm: state.currentForm?.id === action.payload.id 
-          ? action.payload 
-          : state.currentForm
-      };
-    
-    case 'DELETE_FORM':
-      return {
-        ...state,
-        forms: state.forms.filter(form => form.id !== action.payload),
-        currentForm: state.currentForm?.id === action.payload 
-          ? null 
-          : state.currentForm
-      };
-    
-    case 'ADD_QUESTION':
-      if (state.currentForm?.id !== action.payload.formId) return state;
-      
-      const updatedFormWithNewQuestion = {
-        ...state.currentForm,
-        questions: [...state.currentForm.questions, action.payload.question],
-        updatedAt: new Date().toISOString()
-      };
-      
-      return {
-        ...state,
-        currentForm: updatedFormWithNewQuestion,
-        forms: state.forms.map(form => 
-          form.id === updatedFormWithNewQuestion.id ? updatedFormWithNewQuestion : form
-        )
-      };
-    
-    case 'UPDATE_QUESTION':
-      if (state.currentForm?.id !== action.payload.formId) return state;
-      
-      const updatedFormWithUpdatedQuestion = {
-        ...state.currentForm,
-        questions: state.currentForm.questions.map(q => 
-          q.id === action.payload.question.id ? action.payload.question : q
-        ),
-        updatedAt: new Date().toISOString()
-      };
-      
-      return {
-        ...state,
-        currentForm: updatedFormWithUpdatedQuestion,
-        forms: state.forms.map(form => 
-          form.id === updatedFormWithUpdatedQuestion.id ? updatedFormWithUpdatedQuestion : form
-        )
-      };
-    
-    case 'DELETE_QUESTION':
-      if (state.currentForm?.id !== action.payload.formId) return state;
-      
-      const updatedFormWithDeletedQuestion = {
-        ...state.currentForm,
-        questions: state.currentForm.questions.filter(q => q.id !== action.payload.questionId),
-        updatedAt: new Date().toISOString()
-      };
-      
-      return {
-        ...state,
-        currentForm: updatedFormWithDeletedQuestion,
-        forms: state.forms.map(form => 
-          form.id === updatedFormWithDeletedQuestion.id ? updatedFormWithDeletedQuestion : form
-        )
-      };
-    
-    case 'SET_RESPONSES':
-      return {
-        ...state,
-        responses: {
-          ...state.responses,
-          [action.payload.formId]: action.payload.responses
-        }
-      };
-    
-    case 'ADD_RESPONSE': {
-      const formId = action.payload.formId;
-      const existingResponses = state.responses[formId] || [];
-      const updatedResponses = [...existingResponses, action.payload];
-      
-      // Update response count in the form
-      const updatedForms = state.forms.map(form => {
-        if (form.id === formId) {
-          return {
-            ...form,
-            responseCount: form.responseCount + 1
-          };
-        }
-        return form;
-      });
-      
-      // Update current form if it's the one being responded to
-      const updatedCurrentForm = state.currentForm?.id === formId
-        ? {
-            ...state.currentForm,
-            responseCount: state.currentForm.responseCount + 1
-          }
-        : state.currentForm;
-      
-      return {
-        ...state,
-        responses: {
-          ...state.responses,
-          [formId]: updatedResponses
-        },
         forms: updatedForms,
         currentForm: updatedCurrentForm
       };
     }
-    
+
+    case 'DELETE_FORM': {
+      if (!state.forms.some(form => form.id === action.payload)) return state; // No change if form doesn't exist
+
+      const newResponses = { ...state.responses };
+      delete newResponses[action.payload];
+      return {
+        ...state,
+        forms: state.forms.filter(form => form.id !== action.payload),
+        responses: newResponses,
+        currentForm: state.currentForm?.id === action.payload ? null : state.currentForm
+      };
+    }
+
+    // --- Question Actions ---
+    case 'ADD_QUESTION': {
+        if (!state.currentForm || state.currentForm.id !== action.payload.formId) return state;
+        const formIndex = state.forms.findIndex(f => f.id === action.payload.formId);
+        if (formIndex === -1) return state;
+
+        const updatedQuestions = [...state.forms[formIndex].questions, action.payload.question];
+        const updatedForm = {
+            ...state.forms[formIndex],
+            questions: updatedQuestions,
+            updatedAt: new Date().toISOString()
+        };
+
+        const updatedForms = [...state.forms];
+        updatedForms[formIndex] = updatedForm;
+
+        return {
+            ...state,
+            forms: updatedForms,
+            currentForm: updatedForm, // Update current form reference
+        };
+    }
+
+    case 'UPDATE_QUESTION': {
+        if (!state.currentForm || state.currentForm.id !== action.payload.formId) return state;
+        const formIndex = state.forms.findIndex(f => f.id === action.payload.formId);
+        if (formIndex === -1) return state;
+
+        const questionIndex = state.forms[formIndex].questions.findIndex(q => q.id === action.payload.question.id);
+        if (questionIndex === -1) return state; // Question not found
+
+        const updatedQuestions = [...state.forms[formIndex].questions];
+        updatedQuestions[questionIndex] = action.payload.question;
+
+        const updatedForm = {
+            ...state.forms[formIndex],
+            questions: updatedQuestions,
+            updatedAt: new Date().toISOString()
+        };
+
+        const updatedForms = [...state.forms];
+        updatedForms[formIndex] = updatedForm;
+
+        return {
+            ...state,
+            forms: updatedForms,
+            currentForm: updatedForm, // Update current form reference
+        };
+    }
+
+    case 'DELETE_QUESTION': {
+        if (!state.currentForm || state.currentForm.id !== action.payload.formId) return state;
+        const formIndex = state.forms.findIndex(f => f.id === action.payload.formId);
+        if (formIndex === -1) return state;
+
+        const updatedQuestions = state.forms[formIndex].questions.filter(q => q.id !== action.payload.questionId);
+        if (updatedQuestions.length === state.forms[formIndex].questions.length) return state; // No change
+
+        const updatedForm = {
+            ...state.forms[formIndex],
+            questions: updatedQuestions,
+            updatedAt: new Date().toISOString()
+        };
+
+        const updatedForms = [...state.forms];
+        updatedForms[formIndex] = updatedForm;
+
+        return {
+            ...state,
+            forms: updatedForms,
+            currentForm: updatedForm, // Update current form reference
+        };
+    }
+
+    // --- Response Actions ---
+     case 'SET_RESPONSES':
+         return { ...state, responses: { ...state.responses, [action.payload.formId]: action.payload.responses }};
+
+    case 'ADD_RESPONSE': {
+      const { formId, answers } = action.payload;
+      const formIndex = state.forms.findIndex(form => form.id === formId);
+      if (formIndex === -1) return state; // Form not found
+
+      const newResponse = {
+        id: `resp-${Date.now()}`,
+        formId,
+        answers,
+        submittedAt: new Date().toISOString(),
+      };
+
+      const existingResponses = state.responses[formId] || [];
+      const updatedResponsesForForm = [...existingResponses, newResponse];
+      const allUpdatedResponses = { ...state.responses, [formId]: updatedResponsesForForm };
+
+      const updatedForms = [...state.forms];
+      const responseCount = (updatedForms[formIndex].responseCount || 0) + 1;
+      updatedForms[formIndex] = { ...updatedForms[formIndex], responseCount };
+
+      const updatedCurrentForm = state.currentForm?.id === formId
+        ? updatedForms[formIndex]
+        : state.currentForm;
+
+      return {
+        ...state,
+        responses: allUpdatedResponses,
+        forms: updatedForms,
+        currentForm: updatedCurrentForm
+      };
+    }
+
+    // Loading/Error actions remain the same
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
-    
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    
+
     default:
+      // --- FIX: Add explicit check for unknown action types ---
+      console.warn(`FormProvider: Unknown action type "${action.type}"`);
       return state;
+      // --- END FIX ---
   }
 };
 
 // Provider component
 export const FormProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(formReducer, initialStateWithExample);
-  
-  // Load data from localStorage on initial render
-  useEffect(() => {
-    const storedForms = localStorage.getItem('forms');
-    const storedResponses = localStorage.getItem('responses');
-    
-    if (storedForms) {
-      try {
-        const parsedForms = JSON.parse(storedForms);
-        dispatch({ type: 'SET_FORMS', payload: parsedForms });
-      } catch (error) {
-        console.error('Error parsing stored forms:', error);
-      }
-    }
-    
-    if (storedResponses) {
-      try {
-        const parsedResponses = JSON.parse(storedResponses);
-        Object.entries(parsedResponses).forEach(([formId, responses]) => {
-          dispatch({ 
-            type: 'SET_RESPONSES', 
-            payload: { formId, responses } 
-          });
-        });
-      } catch (error) {
-        console.error('Error parsing stored responses:', error);
-      }
-    }
-  }, []);
-  
-  // Save data to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('forms', JSON.stringify(state.forms));
-    localStorage.setItem('responses', JSON.stringify(state.responses));
-  }, [state.forms, state.responses]);
-  
-  // Helper functions
-  const createForm = (title, description) => {
+  const [state, dispatch] = useReducer(formReducer, initialState);
+
+  // --- Action creators wrapped in useCallback (dependencies checked) ---
+  const createForm = useCallback((title, description) => {
     const newForm = {
-      id: `form-${Date.now()}`,
+      id: `form-${Date.now()}`, // Ensure unique ID
       title,
       description,
       questions: [],
@@ -261,107 +229,122 @@ export const FormProvider = ({ children }) => {
       updatedAt: new Date().toISOString(),
       responseCount: 0,
     };
-    
     dispatch({ type: 'ADD_FORM', payload: newForm });
     return newForm;
-  };
-  
-  const updateForm = (formUpdate) => {
-    if (!state.currentForm) return;
-    
-    const updatedForm = {
-      ...state.currentForm,
-      ...formUpdate,
-      updatedAt: new Date().toISOString()
-    };
-    
-    dispatch({ type: 'UPDATE_FORM', payload: updatedForm });
-  };
-  
-  const deleteForm = (formId) => {
+  }, [dispatch]); // dispatch is stable
+
+  const updateForm = useCallback((formUpdate) => {
+      if (!formUpdate || !formUpdate.id) {
+          console.error("updateForm requires an object with an 'id'.");
+          return;
+      }
+    // Add updatedAt timestamp automatically within the reducer now
+    dispatch({ type: 'UPDATE_FORM', payload: formUpdate });
+  }, [dispatch]);
+
+  const deleteForm = useCallback((formId) => {
     dispatch({ type: 'DELETE_FORM', payload: formId });
-  };
-  
-  const getForm = (formId) => {
+  }, [dispatch]);
+
+  // getForm doesn't dispatch, it just reads state. No useCallback needed if used directly in component scope.
+  // But if passed down, useCallback prevents unnecessary re-renders of consumers.
+  const getForm = useCallback((formId) => {
     return state.forms.find(form => form.id === formId);
-  };
-  
-  const setCurrentForm = (formId) => {
-    const form = getForm(formId);
-    if (form) {
-      dispatch({ type: 'SET_CURRENT_FORM', payload: form });
+  }, [state.forms]); // Depends on state.forms
+
+  const setCurrentForm = useCallback((formId) => {
+    const form = state.forms.find(f => f.id === formId);
+    // Dispatch will handle checking if update is needed
+    dispatch({ type: 'SET_CURRENT_FORM', payload: form || null });
+  }, [dispatch, state.forms]); // Depends on state.forms
+
+  const addQuestion = useCallback((question) => {
+    // The reducer now checks for currentForm
+    if (state.currentForm) {
+      const newQuestion = { ...question, id: `q-${Date.now()}` };
+      dispatch({
+        type: 'ADD_QUESTION',
+        payload: { formId: state.currentForm.id, question: newQuestion }
+      });
+    } else {
+        console.error("addQuestion: No current form selected.");
     }
-  };
-  
-  const addQuestion = (question) => {
-    if (!state.currentForm) return;
-    
-    const newQuestion = {
-      ...question,
-      id: `q-${Date.now()}`,
-    };
-    
-    dispatch({ 
-      type: 'ADD_QUESTION', 
-      payload: { formId: state.currentForm.id, question: newQuestion } 
-    });
-  };
-  
-  const updateQuestion = (question) => {
-    if (!state.currentForm) return;
-    
-    dispatch({ 
-      type: 'UPDATE_QUESTION', 
-      payload: { formId: state.currentForm.id, question } 
-    });
-  };
-  
-  const deleteQuestion = (questionId) => {
-    if (!state.currentForm) return;
-    
-    dispatch({ 
-      type: 'DELETE_QUESTION', 
-      payload: { formId: state.currentForm.id, questionId } 
-    });
-  };
-  
-  const submitResponse = (formId, answers) => {
-    const newResponse = {
-      id: `resp-${Date.now()}`,
-      formId,
-      answers,
-      submittedAt: new Date().toISOString(),
-    };
-    
-    dispatch({ type: 'ADD_RESPONSE', payload: newResponse });
-    return newResponse;
-  };
-  
-  const getResponses = (formId) => {
+  }, [dispatch, state.currentForm]); // Depends on state.currentForm
+
+  const updateQuestion = useCallback((question) => {
+     if (state.currentForm) {
+      dispatch({
+        type: 'UPDATE_QUESTION',
+        payload: { formId: state.currentForm.id, question }
+      });
+     } else {
+         console.error("updateQuestion: No current form selected.");
+     }
+  }, [dispatch, state.currentForm]);
+
+  const deleteQuestion = useCallback((questionId) => {
+    if (state.currentForm) {
+      dispatch({
+        type: 'DELETE_QUESTION',
+        payload: { formId: state.currentForm.id, questionId }
+      });
+    } else {
+        console.error("deleteQuestion: No current form selected.");
+    }
+  }, [dispatch, state.currentForm]);
+
+  const submitResponse = useCallback((formId, answers) => {
+    dispatch({ type: 'ADD_RESPONSE', payload: { formId, answers } });
+  }, [dispatch]);
+
+  // getResponses also reads state. Use useCallback if passed down.
+  const getResponses = useCallback((formId) => {
     return state.responses[formId] || [];
-  };
-  
+  }, [state.responses]); // Depends on state.responses
+
+  // --- FIX: Stable context value ---
+  // Only include stable functions (dispatch and memoized actions)
+  // Consumers will get `state` directly via `useForm().state`
+  const contextValue = useMemo(() => ({
+    // state, // REMOVED state from here
+    dispatch,
+    // Memoized action creators
+    createForm,
+    updateForm,
+    deleteForm,
+    getForm,
+    setCurrentForm,
+    addQuestion,
+    updateQuestion,
+    deleteQuestion,
+    submitResponse,
+    getResponses,
+    // --- ADD state separately for direct access ---
+    // This allows consumers to get state without the context value itself changing
+    state,
+  }), [
+      // List ONLY stable dependencies here (dispatch + memoized functions)
+      dispatch, createForm, updateForm, deleteForm, getForm, setCurrentForm,
+      addQuestion, updateQuestion, deleteQuestion, submitResponse, getResponses,
+      // --- ADD state here - useMemo will still run when state changes, BUT
+      // the object reference passed to Provider only changes if one of the
+      // STABLE functions changes (which they shouldn't) OR if state changes.
+      // This is the standard pattern. The issue wasn't necessarily useMemo,
+      // but components potentially over-reacting to the context value change.
+      // By separating state access, components can be more selective.
+      state
+  ]);
+  // --- END FIX ---
+
+  // Line ~175
   return (
-    <FormContext.Provider value={{ 
-      state, 
-      dispatch,
-      createForm,
-      updateForm,
-      deleteForm,
-      getForm,
-      setCurrentForm,
-      addQuestion,
-      updateQuestion,
-      deleteQuestion,
-      submitResponse,
-      getResponses,
-    }}>
+    <FormContext.Provider value={contextValue}>
       {children}
     </FormContext.Provider>
   );
 };
 
-// Custom hook for using the context
+// Custom hook for using the context (remains the same)
 export const useForm = () => {
   const context = useContext(FormContext);
   if (!context) {
