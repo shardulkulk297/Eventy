@@ -4,7 +4,8 @@ import { Card } from '@/shared/ui/card';
 import { MoreHorizontal, Trash2, Calendar, Edit, Eye, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { useForm } from '@/features/CreateEvent/context/FormContext';
+// New import
+import { useEvent } from '@/features/CreateEvent/context/EventContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +25,7 @@ const FormCard = ({
   // onPreview,
 }) => {
   const { id: formId, title: formTitle, updatedAt, responseCount = 0, thumbnail } = form || {};
-  const { deleteForm } = useForm();
+  const { deleteEvent } = useForm();
   const navigate = useNavigate(); // Use the hook here
 
   const formLastEdited = updatedAt ? new Date(updatedAt).toLocaleDateString('en-US', {
@@ -50,7 +51,7 @@ const FormCard = ({
     e.stopPropagation();
     if (formId) {
       // Consider adding a confirmation dialog here
-      deleteForm(formId);
+deleteEvent(formId);
       toast.success(`Form "${formTitle || 'Untitled'}" deleted.`);
     } else {
        toast.error("Cannot delete form: ID is missing.");

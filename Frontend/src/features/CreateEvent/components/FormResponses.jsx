@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from './PageTransition';
 import Button from './Button';
-import { useForm } from '@/features/CreateEvent/context/FormContext';
+import { useEvent } from '@/features/CreateEvent/context/EventContext';
 import { ArrowLeft, Download, ChevronDown, ChevronUp, ExternalLink, FileText, Image } from 'lucide-react';
 import { motion } from 'framer-motion';
 // import { Skeleton } from '../ui/skeleton';
@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 const FormResponses = () => {
   const { formId } = useParams();
   const navigate = useNavigate();
-  const { getForm, getResponses } = useForm();
+  const { getEvent, getEventResponses } = useEvent();
   
   const [form, setForm] = useState(undefined);
   const [responses, setResponses] = useState([]);

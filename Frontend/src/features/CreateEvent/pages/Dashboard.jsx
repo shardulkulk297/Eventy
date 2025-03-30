@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 import PageTransition from '@/features/CreateEvent/components/PageTransition';
 import FormCard from '@/features/CreateEvent/components/FormCard';
 import NewFormButton from '@/features/CreateEvent/components/NewFormButton';
-import { useForm } from '@/features/CreateEvent/context/FormContext';
+// New import
+import { useEvent } from '@/features/CreateEvent/context/EventContext'; // Assuming you renamed the file and exported hook
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { state } = useForm();
+  const { state } = useEvent();
   const [search, setSearch] = useState('');
   
   const filteredForms = state.forms.filter(form => 

@@ -5,11 +5,10 @@ import { Card } from '@/shared/ui/card'; // Assuming shared UI path
 import { Button } from '@/shared/ui/button'; // Assuming shared UI path
 import { Plus, Loader2 } from 'lucide-react'; // Added Loader2 for visual feedback
 import { cn } from '@/lib/utils';
-import { useForm } from '@/features/CreateEvent/context/FormContext'; // Import useForm
-
+import { useEvent } from '@/features/CreateEvent/context/EventContext';
 const NewFormButton = ({ className }) => {
   const navigate = useNavigate();
-  const { createForm } = useForm(); // Get createForm function from context
+  const { createForm } = useEvent(); // Get createForm function from context
   const [isCreating, setIsCreating] = useState(false); // State for loading indicator
 
   const handleCreateClick = async () => {

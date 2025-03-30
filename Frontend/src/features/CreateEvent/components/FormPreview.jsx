@@ -5,7 +5,7 @@ import PageTransition from './PageTransition';
 // --- FIX: Ensure Button import path is correct ---
 import Button from './Button'; // Or '@/shared/ui/button' if that's the correct path
 // --- END FIX ---
-import { useForm } from '@/features/CreateEvent/context/FormContext';
+import { useEvent } from '@/features/CreateEvent/context/EventContext';
 import { ArrowLeft, Send, Calendar, Clock, Upload, FileText, Image } from 'lucide-react'; // Added Image
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 const FormPreview = () => {
   const { formId } = useParams();
   const navigate = useNavigate();
-  const { getForm, submitResponse } = useForm();
+  const { getEvent, submitEventResponses } = useEvent();
 
   const [form, setForm] = useState(undefined);
   const [answers, setAnswers] = useState({});
@@ -22,7 +22,7 @@ const FormPreview = () => {
 
   useEffect(() => {
     if (formId) {
-      const currentForm = getForm(formId);
+      const currentForm = getEvent(formId);
       if (currentForm) {
         setForm(currentForm);
         // Initialize answers
