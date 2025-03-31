@@ -1,355 +1,268 @@
-/* src/features/CreateEvent/components/QuestionTypes.jsx */
-import React, { useState, useRef, useEffect, useCallback } from 'react'; // Added useCallback
-import {
-  AlignLeft, CheckSquare, ChevronDown, Clock, CopyPlus, GripVertical,
-  List, Plus, Trash, Type, Calendar, Upload, Settings // Added Settings
-} from 'lucide-react';
+/* Eventy/Frontend/src/features/CreateEvent/components/QuestionTypes.jsx */
+import React, { useState, useCallback, useEffect } from 'react';
+import { Button } from '@/shared/ui/button';
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
+import { Checkbox } from "@/shared/ui/checkbox"; // Use Checkbox primitive
+import { Label } from "@/shared/ui/label";
+import { Card } from '@/shared/ui/card';
+import { Switch } from '@/shared/ui/switch';
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group"; // If needed for rendering options
+import { Plus, Trash2, GripVertical, Copy, ChevronDown, Type, MessageSquare, CheckSquare, CircleDot, ChevronDownSquare, CalendarDays, Clock, ArrowDownUp, Upload, AlertCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/shared/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-// --- FIX: Import renamed hook ---
-import { useEventManager } from '@/features/CreateEvent/context/EventManagerContext';
-// --- END FIX ---
-import { Button } from '@/shared/ui/button'; // Assuming Button is shared
-import { Switch } from '@/shared/ui/switch'; // Assuming Switch is shared
-import { Label } from '@/shared/ui/label'; // Assuming Label is shared
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-// Debounce function (keep as is)
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-
-export const QuestionCard = ({
-  question,
-  eventId, // Receive eventId
-  formId, // Receive formId
-  index,
-  isSelected,
-  onSelect
-}) => {
-  // --- FIX: Use renamed hook ---
-  const { updateQuestionInForm, deleteQuestionFromForm, addQuestionToForm } = useEventManager();
-  // --- END FIX ---
-  const [title, setTitle] = useState(question.title);
-  const [description, setDescription] = useState(question.description || '');
-  const [required, setRequired] = useState(question.required);
-  const [options, setOptions] = useState(question.options || []);
-  const titleRef = useRef(null);
-
-   // Debounced update function using useCallback
-   const debouncedUpdate = useCallback(
-       debounce((updatedQuestionData) => {
-           // --- FIX: Pass eventId and formId to update function ---
-           updateQuestionInForm(eventId, formId, updatedQuestionData);
-           // --- END FIX ---
-       }, 500), // 500ms debounce
-       [updateQuestionInForm, eventId, formId] // Add dependencies
-   );
-
-
-  // Effect to trigger debounced update when local state changes
-  useEffect(() => {
-    // Check against the original question prop for changes
-    if (
-      title !== question.title ||
-      description !== (question.description || '') ||
-      required !== question.required ||
-      JSON.stringify(options) !== JSON.stringify(question.options || [])
-    ) {
-      debouncedUpdate({
-        ...question, // Keep original id and type
-        title,
-        description: description || undefined,
-        required,
-        options: options.length > 0 ? options : undefined
-      });
-    }
-    // Depend on local state and the original question object (and the debounced function)
-  }, [title, description, required, options, question, debouncedUpdate]);
-
-   // Effect for auto-resizing title textarea (remains the same)
-  useEffect(() => {
-    if (titleRef.current) {
-      titleRef.current.style.height = 'auto';
-      titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
-    }
-  }, [title]);
-
-  const addOption = () => {
-    const newOption = { id: `opt-${Date.now()}`, value: `Option ${options.length + 1}` };
-    setOptions([...options, newOption]); // Update local state, useEffect will trigger save
-  };
-
-  const updateOption = (id, value) => {
-    setOptions(options.map(opt => opt.id === id ? { ...opt, value } : opt));
-  };
-
-  const removeOption = (id) => {
-    setOptions(options.filter(opt => opt.id !== id));
-  };
-
-  // Function to handle duplication
-  const handleDuplicate = (e) => {
-    e.stopPropagation();
-     // Create a new question object, removing the old ID
-     const { id, ...questionWithoutId } = question;
-     const newQuestionData = {
-       ...questionWithoutId,
-       title: `${question.title} (Copy)`, // Append copy to title
-       // Reset options IDs if they exist
-       options: question.options?.map(opt => ({ ...opt, id: `opt-${Date.now()}-${Math.random()}` }))
-     };
-     // Call context function to add the duplicated question
-     addQuestionToForm(eventId, formId, newQuestionData); // Pass eventId, formId
-     toast.success("Question duplicated");
-  };
-
-
-  const TypeIcon = () => {
-    // ... (TypeIcon logic remains the same)
-    switch (question.type) {
-      case 'short': return <Type size={18} />;
-      case 'paragraph': return <AlignLeft size={18} />;
-      case 'multiple_choice': return <List size={18} />;
-      case 'checkbox': return <CheckSquare size={18} />;
-      case 'dropdown': return <ChevronDown size={18} />;
-      case 'date': return <Calendar size={18} />;
-      case 'time': return <Clock size={18} />;
-      case 'file': return <Upload size={18} />;
-      default: return <Type size={18} />;
-    }
-  };
-
-  return (
-    <motion.div
-      layout // Animate layout changes
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.2 }}
-       className={cn(
-         'question-container group bg-white dark:bg-gray-800 p-6 rounded-lg border border-form-card-border dark:border-gray-700 mb-4 transition-all duration-300 hover:shadow-elevation-1',
-         isSelected && 'selected border-l-4 border-l-primary border-t-form-card-border border-r-form-card-border border-b-form-card-border shadow-blue-glow dark:border-l-primary dark:border-t-gray-700 dark:border-r-gray-700 dark:border-b-gray-700' // Use primary color for selected border
-       )}
-      onClick={onSelect}
-    >
-       {/* Top section: Icon, Title, Description, Index */}
-      <div className="flex items-start gap-3 mb-4">
-         <div className="mt-1 text-form-dark-gray dark:text-gray-400">
-          <TypeIcon />
-        </div>
-         <div className="flex-1">
-           <textarea
-            ref={titleRef}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-             className="w-full resize-none overflow-hidden text-lg font-medium border-b-2 border-transparent focus:border-primary bg-transparent focus:outline-none dark:text-white" // Adjusted focus color
-            placeholder="Question title"
-            rows={1}
-          />
-           {/* Only show description for non-short answer types */}
-           {question.type !== 'short' && (
-             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-               className="w-full mt-2 text-sm text-form-dark-gray dark:text-gray-400 resize-none border-b-2 border-transparent focus:border-primary bg-transparent focus:outline-none" // Adjusted focus color
-              placeholder="Description (optional)"
-              rows={1}
-            />
-          )}
-        </div>
-         {/* Index number (Optional, kept original logic) */}
-         {/* <div className="text-form-dark-gray opacity-0 group-hover:opacity-100 transition-opacity">
-          {index + 1}
-         </div> */}
-      </div>
-
-      {/* Content section based on question type */}
-       <div className="ml-8 mt-6 pl-3"> {/* Added padding-left */}
-        {(question.type === 'short') && (
-           <div className="border-b border-form-card-border dark:border-gray-700 py-2 text-form-dark-gray dark:text-gray-400 italic">
-            Short answer text
-          </div>
-        )}
-         {(question.type === 'paragraph') && (
-           <div className="border-b border-form-card-border dark:border-gray-700 py-2 pb-12 text-form-dark-gray dark:text-gray-400 italic">
-            Long answer text
-          </div>
-        )}
-         {(question.type === 'date') && (
-           <div className="border-b border-form-card-border dark:border-gray-700 py-2 text-form-dark-gray dark:text-gray-400 flex items-center gap-2 italic">
-            <Calendar size={16} /> Date input placeholder
-          </div>
-        )}
-         {(question.type === 'time') && (
-           <div className="border-b border-form-card-border dark:border-gray-700 py-2 text-form-dark-gray dark:text-gray-400 flex items-center gap-2 italic">
-            <Clock size={16} /> Time input placeholder
-          </div>
-        )}
-         {(question.type === 'file') && (
-           <div className="border-b border-form-card-border dark:border-gray-700 py-2 text-form-dark-gray dark:text-gray-400 flex items-center gap-2 italic">
-            <Upload size={16} /> File upload placeholder
-          </div>
-        )}
-         {/* Options for relevant types */}
-         {(question.type === 'multiple_choice' || question.type === 'checkbox' || question.type === 'dropdown') && (
-          <div className="space-y-3">
-            {options.map((option, idx) => (
-              <div key={option.id} className="flex items-center gap-3">
-                {/* Icon based on type */}
-                {question.type === 'multiple_choice' && <div className="w-4 h-4 rounded-full border border-form-dark-gray dark:border-gray-500 flex-shrink-0"></div>}
-                {question.type === 'checkbox' && <div className="w-4 h-4 border border-form-dark-gray dark:border-gray-500 flex-shrink-0"></div>}
-                {question.type === 'dropdown' && <div className="w-4 text-center flex-shrink-0 text-xs text-form-dark-gray dark:text-gray-400">{idx + 1}.</div>}
-
-                <input
-                  type="text"
-                  value={option.value}
-                  onChange={(e) => updateOption(option.id, e.target.value)}
-                   className="flex-1 border-b border-form-card-border dark:border-gray-600 focus:border-primary bg-transparent py-1 focus:outline-none dark:text-white"
-                  placeholder={`Option ${idx + 1}`}
-                />
-                 <button
-                   onClick={(e) => { e.stopPropagation(); removeOption(option.id); }}
-                   className="text-form-dark-gray dark:text-gray-400 hover:text-form-accent-red dark:hover:text-red-500 p-1 rounded-full"
-                  aria-label={`Remove option ${idx + 1}`}
-                >
-                  <Trash size={16} />
-                </button>
-              </div>
-            ))}
-             {/* Add Option Button */}
-             <button
-               onClick={(e) => { e.stopPropagation(); addOption(); }}
-               className="flex items-center gap-2 text-primary dark:text-blue-400 hover:text-primary/80 dark:hover:text-blue-300 mt-2 text-sm"
-             >
-               <Plus size={14} />
-              Add option
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Footer section */}
-       <div className="flex items-center justify-end mt-6 pt-4 border-t border-form-card-border dark:border-gray-700">
-         <div className="flex items-center gap-4">
-          {/* Duplicate Button */}
-           <Button
-             variant="ghost" size="icon"
-             onClick={handleDuplicate}
-             className="text-form-dark-gray dark:text-gray-400 hover:text-primary dark:hover:text-blue-400"
-             aria-label="Duplicate question"
-             title="Duplicate question"
-           >
-             <CopyPlus size={18} />
-           </Button>
-           {/* Delete Button */}
-           <Button
-             variant="ghost" size="icon"
-             onClick={(e) => {
-               e.stopPropagation();
-               // --- FIX: Pass eventId and formId ---
-               deleteQuestionFromForm(eventId, formId, question.id);
-               // --- END FIX ---
-             }}
-             className="text-form-dark-gray dark:text-gray-400 hover:text-form-accent-red dark:hover:text-red-500"
-             aria-label="Delete question"
-             title="Delete question"
-           >
-             <Trash size={18} />
-           </Button>
-
-           {/* Drag Handle - Styling only */}
-           {/* <Button variant="ghost" size="icon" className="text-form-dark-gray dark:text-gray-400 cursor-move" aria-label="Drag to reorder" title="Drag to reorder">
-             <GripVertical size={18} />
-           </Button> */}
-
-           <span className="w-px h-6 bg-form-card-border dark:bg-gray-600 mx-2"></span> {/* Separator */}
-
-           {/* Required Toggle */}
-           <div className="flex items-center gap-2">
-             <Label htmlFor={`required-${question.id}`} className="text-sm text-form-dark-gray dark:text-gray-300 cursor-pointer">Required</Label>
-             <Switch
-               id={`required-${question.id}`}
-               checked={required}
-               onCheckedChange={(checked) => {
-                 // e.stopPropagation(); // Not needed for Shadcn Switch usually
-                 setRequired(checked);
-               }}
-               aria-label="Toggle question required"
-             />
-           </div>
-         </div>
-       </div>
-    </motion.div>
-  );
+// --- Question Type Definitions ---
+const QUESTION_TYPES_CONFIG = {
+  short: { icon: Type, label: 'Short Answer' },
+  paragraph: { icon: MessageSquare, label: 'Paragraph' },
+  multiple_choice: { icon: CircleDot, label: 'Multiple Choice' },
+  checkbox: { icon: CheckSquare, label: 'Checkboxes' },
+  dropdown: { icon: ChevronDownSquare, label: 'Dropdown' },
+  date: { icon: CalendarDays, label: 'Date' },
+  time: { icon: Clock, label: 'Time' },
+  // linear_scale: { icon: ArrowDownUp, label: 'Linear Scale' }, // Example
+  file: { icon: Upload, label: 'File Upload' },
 };
 
+// --- Question Card Component ---
+export const QuestionCard = React.memo(({ question, index, isSelected, onSelect, updateQuestion, deleteQuestion }) => {
+  // Local state for controlled inputs within the card
+  const [localTitle, setLocalTitle] = useState(question.title || '');
+  const [localDescription, setLocalDescription] = useState(question.description || '');
+  const [localOptions, setLocalOptions] = useState(question.options || []); // Use local state for options array
 
-// AddQuestionButton (Keep as is, maybe adjust styling slightly)
-export const AddQuestionButton = ({ onSelectType }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  // Sync local state if the question prop changes from parent
+  useEffect(() => {
+    setLocalTitle(question.title || '');
+    setLocalDescription(question.description || '');
+    // Deep copy or check for changes before setting options to prevent infinite loops
+    if (JSON.stringify(question.options) !== JSON.stringify(localOptions)) {
+        setLocalOptions(JSON.parse(JSON.stringify(question.options || [])));
+    }
+  }, [question]); // Rerun when the question object reference changes
 
-  const questionTypes = [
-    { type: 'short', label: 'Short answer', icon: <Type size={18} /> },
-    { type: 'paragraph', label: 'Paragraph', icon: <AlignLeft size={18} /> },
-    { type: 'multiple_choice', label: 'Multiple choice', icon: <List size={18} /> },
-    { type: 'checkbox', label: 'Checkboxes', icon: <CheckSquare size={18} /> },
-    { type: 'dropdown', label: 'Dropdown', icon: <ChevronDown size={18} /> },
-    { type: 'date', label: 'Date', icon: <Calendar size={18} /> },
-    { type: 'time', label: 'Time', icon: <Clock size={18} /> },
-    { type: 'file', label: 'File upload', icon: <Upload size={18} /> },
-  ];
+  // --- Debounced Update Logic (Optional - Parent FormBuilder handles main debounce) ---
+  // If frequent updates within the card cause issues, debounce updates from here too.
+  // For now, we update parent state immediately on blur or significant action.
+
+  const handleFieldChange = (field, value) => {
+     const updatedQuestion = { ...question, [field]: value };
+     // Immediately call updateQuestion - parent FormBuilder will debounce the save to Firestore
+     updateQuestion(updatedQuestion);
+  };
+
+   // Specific handler for title with potential local state sync
+  const handleTitleChange = (e) => {
+      setLocalTitle(e.target.value);
+      // Optionally debounce updateQuestion call here if needed
+      handleFieldChange('title', e.target.value); // Or update on blur/enter
+  };
+    // Update on blur to reduce calls
+  const handleTitleBlur = () => {
+       if (localTitle !== question.title) {
+          handleFieldChange('title', localTitle);
+       }
+  };
+
+   // Specific handler for description
+  const handleDescriptionChange = (e) => {
+      setLocalDescription(e.target.value);
+  };
+   const handleDescriptionBlur = () => {
+       if (localDescription !== question.description) {
+          handleFieldChange('description', localDescription || null); // Send null if empty
+       }
+  };
+
+
+  // --- Option Management ---
+  const handleOptionChange = (index, value) => {
+    const newOptions = localOptions.map((opt, i) =>
+      i === index ? { ...opt, value: value || '' } : opt // Ensure value is not undefined
+    );
+    setLocalOptions(newOptions); // Update local state first
+    updateQuestion({ ...question, options: newOptions }); // Trigger parent update -> debounce save
+  };
+
+  const addOption = () => {
+    const newOption = { id: `opt-${Date.now()}`, value: `Option ${localOptions.length + 1}` };
+    const newOptions = [...localOptions, newOption];
+    setLocalOptions(newOptions);
+    updateQuestion({ ...question, options: newOptions });
+  };
+
+  const deleteOption = (indexToDelete) => {
+     // Prevent deleting the last option if needed, or handle accordingly
+    // if (localOptions.length <= 1) {
+    //     toast.error("Must have at least one option.");
+    //     return;
+    // }
+    const newOptions = localOptions.filter((_, index) => index !== indexToDelete);
+    setLocalOptions(newOptions);
+    updateQuestion({ ...question, options: newOptions });
+  };
+
+  const handleRequiredToggle = (checked) => {
+    handleFieldChange('required', checked);
+  };
+
+  const handleCardClick = () => {
+      if (!isSelected) {
+          onSelect(question.id);
+      }
+  };
+
+  const hasOptions = question.type === 'multiple_choice' || question.type === 'checkbox' || question.type === 'dropdown';
 
   return (
-    <div className="relative mt-6 flex justify-center"> {/* Centered button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => setIsOpen(!isOpen)}
-         className="flex items-center gap-2 bg-white dark:bg-gray-700 border border-form-card-border dark:border-gray-600 rounded-full py-2 px-5 text-form-dark-gray dark:text-gray-300 hover:text-primary dark:hover:text-blue-400 hover:border-primary dark:hover:border-blue-400 transition-colors shadow-sm hover:shadow-md"
-        aria-haspopup="true"
-        aria-expanded={isOpen}
-      >
-        <Plus size={18} />
-        <span>Add question</span>
-      </motion.button>
-
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: -5 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -5 }}
-           className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-elevation-2 w-64 overflow-hidden z-20 border dark:border-gray-700"
-          role="menu"
-        >
-          <div className="p-1">
-            {questionTypes.map((item) => (
-              <button
-                key={item.type}
-                role="menuitem"
-                onClick={() => {
-                  onSelectType(item.type);
-                  setIsOpen(false);
-                }}
-                 className="flex items-center gap-3 w-full px-3 py-2.5 text-left text-sm hover:bg-form-light-gray dark:hover:bg-gray-700 rounded-md transition-colors text-gray-700 dark:text-gray-200"
-              >
-                 <span className="text-gray-500 dark:text-gray-400">{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </motion.div>
+    <Card
+      className={cn(
+        "border transition-all duration-150 ease-in-out",
+        isSelected ? 'border-primary ring-2 ring-primary/30 shadow-md' : 'border-border hover:border-muted-foreground/50',
+        'bg-card'
       )}
-    </div>
+      onClick={handleCardClick}
+    >
+      <div className='p-5'>
+        <div className='flex gap-4 items-start'>
+          {/* Drag Handle (Optional) */}
+          {/* <GripVertical className='h-5 w-5 text-muted-foreground mt-2 cursor-grab' /> */}
+
+          <div className='flex-grow'>
+            {/* Question Title Input */}
+            <Input
+              value={localTitle}
+              onChange={handleTitleChange}
+              onBlur={handleTitleBlur} // Update on blur
+              placeholder="Question Title"
+              className={cn(
+                "w-full text-base font-medium h-auto p-1 focus-visible:ring-1 focus-visible:ring-ring",
+                 isSelected ? 'bg-transparent' : 'bg-transparent border-transparent hover:border-muted-foreground/30'
+               )}
+              aria-label="Question title"
+            />
+             {/* Question Description Input (Optional) */}
+              <Textarea
+                value={localDescription}
+                onChange={handleDescriptionChange}
+                onBlur={handleDescriptionBlur}
+                placeholder="Description (optional)"
+                className={cn(
+                   "w-full text-xs font-normal h-auto p-1 mt-1 resize-none text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring min-h-[20px]",
+                   isSelected ? 'bg-transparent' : 'bg-transparent border-transparent hover:border-muted-foreground/30'
+                 )}
+                 rows={1}
+                aria-label="Question description"
+              />
+
+            {/* Placeholder for the actual input type preview (optional) */}
+            <div className="mt-4 text-sm text-muted-foreground opacity-75">
+              {/* Example: Short answer placeholder */}
+              {question.type === 'short' && <Input placeholder="Short answer text" disabled className="bg-muted/50" />}
+              {question.type === 'paragraph' && <Textarea placeholder="Long answer text" disabled className="bg-muted/50" rows={2} />}
+              {/* Render options only if they exist */}
+              {hasOptions && localOptions && localOptions.length > 0 && (
+                <div className='space-y-2 mt-3'>
+                  {localOptions.map((option, index) => (
+                    <div key={option.id || index} className='flex items-center gap-2'>
+                      {/* Icon based on type */}
+                      {question.type === 'multiple_choice' && <CircleDot className='h-4 w-4 text-muted-foreground' />}
+                      {question.type === 'checkbox' && <CheckSquare className='h-4 w-4 text-muted-foreground' />}
+                      {question.type === 'dropdown' && <span className='text-xs text-muted-foreground w-4 text-center'>{index+1}.</span>}
+
+                      <Input
+                        value={option.value || ''}
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
+                        placeholder={`Option ${index + 1}`}
+                        className="h-8 text-sm flex-grow bg-muted/50 focus-visible:bg-background"
+                        aria-label={`Option ${index + 1} value`}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className='h-7 w-7 text-muted-foreground hover:text-destructive'
+                        onClick={(e) => { e.stopPropagation(); deleteOption(index); }} // Prevent card click
+                        aria-label={`Delete Option ${index + 1}`}
+                        disabled={localOptions.length <= 1 && question.type !== 'checkbox'} // Allow deleting last checkbox option
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                  {/* Add Option Button */}
+                  <Button variant="ghost" size="sm" onClick={addOption} className='text-primary hover:text-primary text-xs'>
+                    <Plus size={14} className='mr-1' /> Add Option
+                  </Button>
+                </div>
+              )}
+              {/* Add placeholders for other types */}
+              {question.type === 'date' && <div className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-muted-foreground"><CalendarDays size={14}/> Date Input</div>}
+              {question.type === 'time' && <div className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-muted-foreground"><Clock size={14}/> Time Input</div>}
+              {question.type === 'file' && <div className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-muted-foreground"><Upload size={14}/> File Upload Input</div>}
+
+            </div>
+          </div>
+
+           {/* Question Type Indicator (Optional) */}
+           {/* <div className='text-xs text-muted-foreground ml-auto pt-1'>
+                {QUESTION_TYPES_CONFIG[question.type]?.label || question.type}
+           </div> */}
+        </div>
+
+        {/* Footer Actions - Show only when selected */}
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-4 pt-4 border-t border-border flex justify-end items-center gap-3"
+            >
+               {/* Duplicate Button (Optional) */}
+               {/* <Button variant="ghost" size="icon" title="Duplicate Question" onClick={() => console.log("Duplicate action")}> <Copy size={16} /> </Button> */}
+
+                <Label htmlFor={`required-${question.id}`} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    Required
+                </Label>
+                <Switch
+                    id={`required-${question.id}`}
+                    checked={question.required || false}
+                    onCheckedChange={handleRequiredToggle}
+                    aria-label="Mark question as required"
+                />
+               <Button variant="ghost" size="icon" title="Delete Question" onClick={(e) => { e.stopPropagation(); deleteQuestion(question.id); }}>
+                 <Trash2 size={16} className='text-destructive' />
+               </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
+    </Card>
+  );
+});
+
+
+// --- Add Question Button Component ---
+export const AddQuestionButton = ({ onSelectType }) => {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className='w-full border-dashed border-2 hover:border-solid hover:border-primary hover:text-primary group'>
+          <Plus size={18} className='mr-2 group-hover:rotate-90 transition-transform' /> Add Question
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className='w-56'>
+        {Object.entries(QUESTION_TYPES_CONFIG).map(([type, { icon: Icon, label }]) => (
+          <DropdownMenuItem key={type} onSelect={() => onSelectType(type)} className='cursor-pointer'>
+            <Icon size={16} className='mr-2' /> {label}
+          </DropdownMenuItem>
+        ))}
+        {/* Add separator or more complex types if needed */}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
