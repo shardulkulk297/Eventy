@@ -1,26 +1,24 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import { BrowserRouter } from 'react-router-dom'
+/* src/main.jsx */
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.jsx';
+import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './features/CreateEvent/context/ThemeContext';
-import { FormProvider } from './features/CreateEvent/context/FormContext';
+// --- FIX: Import the renamed EventManagerProvider ---
+import { EventManagerProvider } from './features/CreateEvent/context/EventManagerContext';
+// --- END FIX ---
 
 createRoot(document.getElementById('root')).render(
-
+  <StrictMode>
     <BrowserRouter>
-        <ThemeProvider>
-            <FormProvider>
-                <App />
-            </FormProvider>
-
-        </ThemeProvider>
-
-
+      <ThemeProvider> {/* ThemeProvider can wrap EventManagerProvider */}
+         {/* --- FIX: Use the renamed EventManagerProvider --- */}
+        <EventManagerProvider>
+          <App />
+        </EventManagerProvider>
+         {/* --- END FIX --- */}
+      </ThemeProvider>
     </BrowserRouter>
-
-
-
-
-
-)
+  </StrictMode>
+);
