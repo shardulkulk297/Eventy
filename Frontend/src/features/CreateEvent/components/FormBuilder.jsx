@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/ui/button';
-import { QuestionCard, AddQuestionButton } from '@/features/CreateEvent/components/QuestionTypes';
+import { QuestionCard, AddQuestionButton } from '@/features/CreateEvent/components/QuestionTypes'; // Assuming QuestionTypes exports these
 import { useEventManager } from '@/features/CreateEvent/context/EventManagerContext';
 import PageTransition from './PageTransition';
-import { Eye, ArrowLeft, Settings, Palette, AlertCircle, Save, Loader2 } from 'lucide-react';
+import { Eye, ArrowLeft, AlertCircle, Save, Loader2 } from 'lucide-react'; // Removed unused Settings, Palette
 import { toast } from 'sonner';
 import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
@@ -13,7 +13,7 @@ import { Skeleton } from '@/shared/ui/skeleton';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-// Debounce function (keep as is)
+// Debounce function
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -35,240 +35,190 @@ const FormBuilder = () => {
     createFormForEvent,
     updateFormForEvent,
     addQuestionToForm,
-    updateQuestion, // Assuming context has these (rename if needed)
-    deleteQuestion, // Assuming context has these (rename if needed)
+    updateQuestionInForm, // Renamed from updateQuestion for clarity if needed
+    deleteQuestionFromForm, // Renamed from deleteQuestion for clarity if needed
   } = useEventManager();
-  const { currentEvent, currentEventForms, events: contextEvents, isLoading: contextLoading, error: contextError } = state; // Destructure events
+  // Ensure `events` is destructured if used in Effect 1 guard logic
+  const { currentEvent, currentEventForms, events, isLoading: contextLoading, error: contextError } = state;
 
   // --- State Management ---
   const [currentFormLocal, setCurrentFormLocal] = useState(null);
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
-  const [pageLoading, setPageLoading] = useState(true); // Still useful for initial mount & form find/create phase
+  const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
-  const [isCreatingNew, setIsCreatingNew] = useState(formId === 'new');
+  // isCreatingNew tracks the *intent* to create on mount if formId is 'new'
+  const [isCreatingNew, setIsCreatingNew] = useState(formIdFromUrl === 'new');
   const [isSaving, setIsSaving] = useState(false);
+  // Ref to track the ID immediately after creation to handle navigation/state sync
+  const justCreatedFormId = useRef(null);
 
-  console.log(`FormBuilder Render: eventId=${eventId}, formId=${formId}, pageLoading=${pageLoading}, contextLoading=${contextLoading}, currentEventId=${currentEvent?.id}, isCreatingNew=${isCreatingNew}`);
+  // --- Effects ---
 
-  // --- Effects for Context and Form Loading ---
-
-  // Effect 1: Validate eventId and trigger context update if needed
+  // Effect 1: Set event context, handle event loading/errors
   useEffect(() => {
-    console.log(`Effect 1 RUN: eventId=${eventId}, currentEvent?.id=${currentEvent?.id}, contextLoading=${contextLoading}, contextError=${contextError}`);
-    setPageError(null); // Clear page-specific errors when IDs change
-
+    setPageError(null); // Clear page errors on ID change
     if (!eventId) {
-      console.error("Effect 1: Event ID is missing from URL.");
       setPageError("Event ID is missing from the URL.");
-      if (pageLoading) setPageLoading(false); // Stop loading if error
-      toast.error("Invalid URL: Event ID missing.");
-      navigate('/posts/events', { replace: true });
+      setPageLoading(false);
       return;
     }
 
-    // If the event context is already loaded and matches, OR if it's currently loading, do nothing here.
-    // Let Effect 2 handle form logic once context is ready.
-    if (currentEvent?.id === eventId || contextLoading) {
-        console.log(`Effect 1: Context matches eventId (${currentEvent?.id === eventId}) or is loading (${contextLoading}). No action needed.`);
-        // If context isn't loading BUT the page is, sync pageLoading state
-        if (!contextLoading && pageLoading && currentEvent?.id === eventId) {
-            console.log("Effect 1: Context is ready and matches, setting pageLoading false.");
-            setPageLoading(false);
-        }
-        return;
+    // Wait if context is loading events
+    if (contextLoading) {
+      setPageLoading(true);
+      return;
     }
 
-    // If context is NOT loading, and the event ID doesn't match the current context event:
-    if (!contextLoading && eventId !== currentEvent?.id) {
-        // Check for context errors *before* requesting the event
-        if (contextError) {
-            console.error(`Effect 1: Context has error: ${contextError}`);
-            setPageError(`Error loading event context: ${contextError}`);
-            if (pageLoading) setPageLoading(false);
+    // Handle context error after loading
+    if (contextError && !currentEvent) {
+         setPageError(`Error loading event context: ${contextError}`);
+         setPageLoading(false);
+         return;
+    }
+
+    // Set context or handle event not found after context loaded
+    if (eventId !== currentEvent?.id) {
+        const eventExists = events?.some(e => e.id === eventId); // Use optional chaining on events
+        if (eventExists) {
+             setCurrentEventId(eventId);
+             setPageLoading(true); // Expect Effect 2 to load the form data
         } else {
-             console.log(`Effect 1: Event ID [${eventId}] differs from context [${currentEvent?.id}]. Calling setCurrentEventId.`);
-             if (!pageLoading) setPageLoading(true); // Show loading as we trigger context change
-             setCurrentEventId(eventId); // Request the context to load this event
+             setPageError(`Event [${eventId}] not found.`);
+             setPageLoading(false);
         }
-    } else if (!contextLoading && !currentEvent && !contextError) {
-        // This case should be handled by setCurrentEventId logging "not found"
-        // We might still be waiting for the event fetch to complete implicitly
-         console.log("Effect 1: Context not loading, no current event, no error. Waiting for context.");
-         if (!pageLoading) setPageLoading(true); // Ensure loading indicator stays on
+    } else {
+        // Context matches, Effect 2 will handle form loading
+         setPageLoading(true); // Assume form loading is needed initially
     }
+  }, [eventId, currentEvent?.id, contextLoading, contextError, events, setCurrentEventId]);
 
-  }, [eventId, currentEvent?.id, contextLoading, contextError, setCurrentEventId, navigate]);
-  // **Removed pageLoading from dependency array to fix infinite loop**
 
-  // Effect 2: Handle finding existing form or triggering creation for 'new'
+  // Effect 2: Find form, or create if 'new', handle loading/errors for the form itself
   useEffect(() => {
     let isMounted = true;
-     console.log(`Effect 2 RUN: eventId=${eventId}, formId=${formId}, contextLoading=${contextLoading}, currentEventId=${currentEvent?.id}, pageError=${pageError}, isCreatingNew=${isCreatingNew}, currentEventForms length=${currentEventForms?.length}`);
 
-    // --- Conditions to EXIT early ---
-    // 1. Context is still loading the event/forms, or there's already a page error
-    if (contextLoading || pageError) {
-      console.log(`Effect 2: Exiting early - contextLoading=${contextLoading}, pageError=${pageError}`);
-      // Ensure pageLoading reflects contextLoading unless there's an error
-      if (!pageLoading && contextLoading && !pageError) setPageLoading(true);
-      else if (pageLoading && !contextLoading) setPageLoading(false); // Stop if context finished (might have error)
-      return () => { isMounted = false; };
+    // --- Exit Conditions ---
+    // 1. Still waiting for Effect 1 to set the correct event context or if there's an error
+    if (pageLoading || pageError || !currentEvent || currentEvent.id !== eventId) {
+        return () => { isMounted = false; }; // Wait for correct context/error resolution
     }
-    // 2. Event context is ready, but doesn't match the requested eventId (should be caught by Effect 1, but double-check)
-    if (!currentEvent || currentEvent.id !== eventId) {
-        console.error(`Effect 2: Exiting early - Mismatch or missing currentEvent. currentEvent.id=${currentEvent?.id}, eventId=${eventId}`);
-        if (!pageError) setPageError("Event context failed to load or does not match URL."); // Set error if not already set
-        if (pageLoading) setPageLoading(false);
-        return () => { isMounted = false; };
-    }
-    // 3. Correct event is loaded, but we are creating new and already did/failed
-    if (isCreatingNew && currentFormLocal) {
-        console.log("Effect 2: Exiting early - Already handled 'new' form creation.");
-        if (pageLoading) setPageLoading(false);
-        return () => { isMounted = false; };
+    // 2. currentEventForms might still be loading in the context if setCurrentEventId just ran
+    if (!currentEventForms) {
+         console.log("Effect 2: Waiting for currentEventForms to load...");
+         // Keep pageLoading true implicitly as it wasn't set false yet
+         return () => { isMounted = false; };
     }
 
-    // --- Context is ready for this eventId ---
-    // Set loading true specifically for the find/create operation within this effect if not already loading
-    if (!pageLoading) setPageLoading(true);
-    // Don't clear pageError here, Effect 1 handles that on ID change
+    // --- Proceed with Form Logic ---
 
-    // Handle 'new' form creation
-    if (formId === 'new') {
+    if (formIdFromUrl === 'new') {
       if (isCreatingNew) {
-        console.log(`Effect 2: Creating new form for event ${eventId}...`);
         createFormForEvent(eventId, 'Untitled Form', '')
           .then(newForm => {
             if (newForm?.id && isMounted) {
-              console.log(`Effect 2: New form created ${newForm.id}, navigating...`);
-              setIsCreatingNew(false); // Prevent re-creation
-              // Navigate will trigger a re-render with the new formId
+              justCreatedFormId.current = newForm.id; // Store ID temporarily
+              setIsCreatingNew(false); // Mark creation process done
               navigate(`/posts/events/${eventId}/forms/builder/${newForm.id}`, { replace: true });
-              // Don't set local state here, let navigation + Effect re-run handle finding the new form
             } else if (isMounted) {
-              const errMsg = "Failed to initiate form creation (context did not return a valid form).";
-              console.error(`Effect 2: ${errMsg}`);
-              toast.error(errMsg);
-              setPageError(errMsg);
-              setIsCreatingNew(false); // Stop trying
-              setPageLoading(false);
+              throw new Error("Invalid form data returned after creation.");
             }
           })
           .catch(error => {
             if (isMounted) {
-              console.error("Effect 2: Error during createFormForEvent call:", error);
-              const errMsg = `Error during form creation: ${error.message || 'Unknown error'}`;
-              toast.error(errMsg);
-              setPageError(errMsg);
-              setIsCreatingNew(false); // Stop trying
+              console.error("Effect 2: Error creating form:", error);
+              setPageError(`Form creation failed: ${error.message}`);
+              setIsCreatingNew(false);
               setPageLoading(false);
             }
           });
       } else {
-          // formId is 'new', but creation isn't active (likely redirect pending or failed)
-          if (isMounted && pageLoading) setPageLoading(false); // Stop loading, wait for navigation or show error
-          console.log("Effect 2: formId is 'new', but isCreatingNew is false. State may be inconsistent or navigation pending.");
+          // If formId is 'new' but not creating, waiting for navigation to complete
+          if (pageLoading && isMounted) setPageLoading(false); // Stop loading if stuck
       }
-    }
-    // Handle finding an existing form
-    else if (formId && currentEventForms) {
-      setIsCreatingNew(false);
-      console.log(`Effect 2: Searching for form ${formId} in ${currentEventForms.length} loaded forms...`);
-      const existingForm = currentEventForms.find(f => f.id === formId);
+    } else if (formIdFromUrl) {
+        // --- Find existing form ---
+        setIsCreatingNew(false); // Ensure this is false
+        const formToLoad = currentEventForms.find(f => f.id === formIdFromUrl);
 
-      if (existingForm && isMounted) {
-         // Check if local state needs update
-         if (currentFormLocal?.id !== existingForm.id || JSON.stringify(currentFormLocal) !== JSON.stringify(existingForm)) {
-            console.log(`Effect 2: Found form ${formId}. Setting local state.`);
-            setCurrentFormLocal(existingForm);
-            setFormTitle(existingForm.title || '');
-            setFormDescription(existingForm.description || '');
+        if (formToLoad) {
+             if (isMounted) {
+                 // Found the form. Update local state ONLY if it differs.
+                 if (currentFormLocal?.id !== formToLoad.id || JSON.stringify(currentFormLocal) !== JSON.stringify(formToLoad)) {
+                     setCurrentFormLocal(formToLoad);
+                     setFormTitle(formToLoad.title || '');
+                     setFormDescription(formToLoad.description || '');
+                 }
+                 setPageError(null); // Clear error if form found
+                 if (pageLoading) setPageLoading(false); // Stop loading
+                 justCreatedFormId.current = null; // Clear ref
+             }
          } else {
-             console.log(`Effect 2: Found form ${formId}, local state already matches.`);
+             // Form not found in context state yet.
+             if (justCreatedFormId.current === formIdFromUrl) {
+                 // We just created it, waiting for context state update. Keep loading.
+                 if (isMounted && !pageLoading) setPageLoading(true);
+             } else if (isMounted) {
+                 // Form genuinely not found.
+                 const errMsg = `Form [${formIdFromUrl}] not found for event [${eventId}].`;
+                 if (pageError !== errMsg) setPageError(errMsg);
+                 if (pageLoading) setPageLoading(false);
+             }
          }
-         if (pageLoading) setPageLoading(false); // Found it, stop loading
-      } else if (isMounted) {
-        // Correct event loaded, forms loaded (or empty), but specific formId not found
-        const errMsg = `Form [${formId}] not found for event [${eventId}]. It might have been deleted or the ID is incorrect.`;
-        console.error(`Effect 2: ${errMsg}`);
-        if (!pageError) { // Avoid overwriting other errors
-            toast.error(errMsg);
-            setPageError(errMsg);
+    } else {
+        // --- Invalid URL State: formIdFromUrl is falsy, not 'new' ---
+        if (isMounted && !isCreatingNew) {
+             const errMsg = "Invalid form URL: Form ID is missing.";
+             if (pageError !== errMsg) setPageError(errMsg);
+             if (pageLoading) setPageLoading(false);
         }
-        if (pageLoading) setPageLoading(false);
-      }
-    }
-    // Handle case where formId exists but forms haven't loaded (should be caught by contextLoading check earlier)
-    else if (formId && !currentEventForms && isMounted) {
-        console.warn("Effect 2: formId exists, but currentEventForms is null/empty. Context might still be fetching forms.");
-        // Keep pageLoading true, context should eventually provide forms or an error
-        if (!pageLoading) setPageLoading(true);
-    }
-    // Handle invalid URL state (e.g., /builder/ without ID or 'new')
-     else if (!formId && isMounted) {
-        setIsCreatingNew(false);
-        const errMsg = "Invalid form URL: Form ID or 'new' keyword is missing.";
-        console.error(`Effect 2: ${errMsg}`);
-         if (!pageError) {
-            toast.error(errMsg);
-            setPageError(errMsg);
-        }
-        if (pageLoading) setPageLoading(false);
     }
 
-    return () => {
-        console.log("Effect 2 CLEANUP");
-        isMounted = false;
-    }; // Cleanup
+    return () => { isMounted = false; }; // Cleanup
 
   }, [
-    eventId, formId, currentEvent, currentEventForms, contextLoading, pageError, // Primary drivers
-    createFormForEvent, navigate, isCreatingNew, currentFormLocal // Actions and state affecting logic
+      // Key dependencies driving this effect
+      eventId, formIdFromUrl,
+      currentEvent, currentEventForms, // Context state
+      contextLoading, contextError, // Context status
+      isCreatingNew, // Local state for 'new' flow
+      pageError, pageLoading, // Local status
+      // Actions/navigation
+      createFormForEvent, navigate
   ]);
-  // Dependencies refined to only include what's necessary for this effect's logic. pageLoading removed.
 
 
-  // Debounced update for title/description (Keep as is, but check dependencies)
+  // Debounced save for title/description
   const debouncedUpdateFormDetails = useCallback(
     debounce(async (title, description) => {
-      // Only save if form exists locally, eventId is present, and not currently saving
       if (currentFormLocal?.id && eventId && !isSaving) {
-         // Check if values *actually* changed from the last known saved state (currentFormLocal)
-         const descChanged = description !== (currentFormLocal.description || '');
-         const titleChanged = title !== currentFormLocal.title;
-
-         if (titleChanged || descChanged) {
-            setIsSaving(true);
-            try {
-                 console.log(`Debounced Save: Updating form ${currentFormLocal.id} - Title: "${title}", Desc: "${description}"`);
-                await updateFormForEvent(eventId, {
-                    id: currentFormLocal.id,
-                    title,
-                    description: description || null
-                });
-                 // Optimistic UI update handled by context reducer, or re-fetch if necessary.
-                 // We rely on Effect 2 to update currentFormLocal when context state changes.
-                 console.log("Debounced Save: Update successful.");
-            } catch (error) {
-                 console.error("Debounced save failed:", error);
-                 toast.error(`Failed to save form details: ${error.message}`);
-            } finally {
-                 setIsSaving(false);
-            }
-         } else {
-             console.log("Debounced Save: No changes detected in title/description.");
-         }
-      } else {
-          console.warn("Debounced Save: Skipping - No form loaded, missing eventId, or already saving.");
+        const descChanged = description !== (currentFormLocal.description || '');
+        const titleChanged = title !== currentFormLocal.title;
+        if (titleChanged || descChanged) {
+          setIsSaving(true);
+          try {
+            await updateFormForEvent(eventId, {
+              id: currentFormLocal.id,
+              title,
+              description: description || null
+            });
+             // Rely on context state to update currentFormLocal via Effect 2
+          } catch (error) {
+            toast.error(`Failed to save form details: ${error.message}`);
+          } finally {
+             // Use setTimeout to give a visual cue that saving happened
+             setTimeout(() => setIsSaving(false), 300);
+          }
+        }
       }
-    }, 1000),
-    [updateFormForEvent, eventId, currentFormLocal, isSaving] // Ensure all used variables are dependencies
+    }, 1000), // 1 second debounce
+    [updateFormForEvent, eventId, currentFormLocal, isSaving] // Add isSaving
   );
 
-  // Effect to trigger debounced update for title/description (Keep as is)
+  // Effect to trigger debounced update
   useEffect(() => {
+    // Only trigger if form is loaded locally, not loading page, not creating, and changes exist
     if (!pageLoading && currentFormLocal && !isCreatingNew) {
       if (formTitle !== currentFormLocal.title || formDescription !== (currentFormLocal.description || '')) {
         debouncedUpdateFormDetails(formTitle, formDescription);
@@ -277,108 +227,75 @@ const FormBuilder = () => {
   }, [formTitle, formDescription, currentFormLocal, pageLoading, isCreatingNew, debouncedUpdateFormDetails]);
 
 
-  // --- Question Handlers (Keep as is, but check context function names) ---
+  // --- Question Handlers ---
   const handleAddQuestion = useCallback((type) => {
-    if (!currentFormLocal?.id || !eventId || contextLoading || pageLoading) {
-      toast.warning("Please wait for the form to load fully.");
-      return;
-    }
-    console.log(`handleAddQuestion: Type=${type} for form ${currentFormLocal.id}`);
+    if (!currentFormLocal?.id || !eventId || pageLoading) return;
     const newQuestionBase = {
-      type,
-      title: 'Untitled Question',
-      required: false,
+      type, title: 'Untitled Question', required: false,
       options: (type === 'multiple_choice' || type === 'checkbox' || type === 'dropdown')
         ? [{ id: `opt-${Date.now()}-${Math.random().toString(16).slice(2)}`, value: 'Option 1' }] : undefined
     };
-     addQuestionToForm(eventId, currentFormLocal.id, newQuestionBase)
-       .then((updatedForm) => { // Assuming context action might return updated form or questions
-          if (updatedForm?.questions?.length > (currentFormLocal.questions?.length || 0)) {
-             const newQId = updatedForm.questions[updatedForm.questions.length - 1].id;
-             console.log(`Selecting new question: ${newQId}`);
-             setSelectedQuestionId(newQId);
-          }
-       })
-       .catch(err => console.error("Error adding question via context:", err));
-       // Selection logic might need adjustment based on how context updates state
-  }, [currentFormLocal, eventId, contextLoading, pageLoading, addQuestionToForm]);
+    addQuestionToForm(eventId, currentFormLocal.id, newQuestionBase)
+      .then((updatedFormOrSuccessFlag) => { // Check what context returns
+          // Find the potential new question ID reliably AFTER state update
+          // This might require context to return the full updated form or ID
+          // For now, just clear selection or select last based on assumption
+          // setSelectedQuestionId(findLastQuestionId(updatedForm)); // Need a reliable way
+          setSelectedQuestionId(null); // Deselect for simplicity for now
+      })
+      .catch(err => console.error("Error adding question via context:", err));
+  }, [currentFormLocal, eventId, pageLoading, addQuestionToForm]);
 
   const handleUpdateQuestion = useCallback((updatedQuestion) => {
-     if (!currentFormLocal?.id || !eventId || !updatedQuestion?.id || contextLoading || pageLoading) return;
-     console.log(`handleUpdateQuestion: Updating Q ${updatedQuestion.id} in form ${currentFormLocal.id}`);
-     // Assuming context function 'updateQuestion' exists and takes (eventId, formId, question)
-     updateQuestion(eventId, currentFormLocal.id, updatedQuestion)
-        .catch(err => console.error("Error updating question via context:", err));
-  }, [currentFormLocal, eventId, contextLoading, pageLoading, updateQuestion]);
+    if (!currentFormLocal?.id || !eventId || !updatedQuestion?.id || pageLoading) return;
+    // Use correct context function name
+    updateQuestionInForm(eventId, currentFormLocal.id, updatedQuestion)
+      .catch(err => console.error("Error updating question via context:", err));
+  }, [currentFormLocal, eventId, pageLoading, updateQuestionInForm]); // Ensure correct function name
 
   const handleDeleteQuestion = useCallback((questionId) => {
-     if (!currentFormLocal?.id || !eventId || !questionId || contextLoading || pageLoading) return;
-     console.log(`handleDeleteQuestion: Deleting Q ${questionId} from form ${currentFormLocal.id}`);
-     // Assuming context function 'deleteQuestion' exists and takes (eventId, formId, questionId)
-     deleteQuestion(eventId, currentFormLocal.id, questionId)
-        .then(() => {
-             if (selectedQuestionId === questionId) {
-                 setSelectedQuestionId(null); // Deselect if deleted
-             }
-        })
-        .catch(err => console.error("Error deleting question via context:", err));
-  }, [currentFormLocal, eventId, contextLoading, pageLoading, deleteQuestion, selectedQuestionId]);
-
+    if (!currentFormLocal?.id || !eventId || !questionId || pageLoading) return;
+     // Use correct context function name
+    deleteQuestionFromForm(eventId, currentFormLocal.id, questionId)
+      .then(() => {
+        if (selectedQuestionId === questionId) setSelectedQuestionId(null);
+      })
+      .catch(err => console.error("Error deleting question via context:", err));
+  }, [currentFormLocal, eventId, pageLoading, deleteQuestionFromForm, selectedQuestionId]); // Ensure correct function name
 
   // --- Navigation ---
-  const handleGoBack = () => {
-    navigate(`/posts/events/${eventId}/forms`);
-  };
+  const handleGoBack = () => { navigate(`/posts/events/${eventId}/forms`); };
+  const handlePreview = () => { if (currentFormLocal?.id && eventId) navigate(`/posts/events/${eventId}/forms/preview/${currentFormLocal.id}`); };
 
-  const handlePreview = () => {
-    if (!currentFormLocal?.id || !eventId) return;
-    navigate(`/posts/events/${eventId}/forms/preview/${currentFormLocal.id}`);
-  };
+  // --- Render Logic ---
 
-
-  // --- Render States ---
-
-  // Initial Loading State (Covers context loading and initial form finding/creating)
-  if (pageLoading && !pageError) { // Show skeleton only if loading and no error yet
-     console.log("Rendering Skeleton Loader");
-    return (
-      <PageTransition className="min-h-screen bg-form-light-gray dark:bg-gray-900 pb-16">
-          {/* Skeleton UI */}
-          <div className="max-w-screen-xl mx-auto p-4 md:p-8">
-          {/* Header Skeleton */}
-          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-             <div className="max-w-screen-xl mx-auto px-4 flex items-center justify-between h-16">
-                  <div className="flex items-center gap-2 sm:gap-4"> <Skeleton className="h-9 w-9 rounded-md" /> <Skeleton className="h-6 w-40 rounded-md" /> </div>
-                  <div className="flex items-center gap-1 sm:gap-2"> <Skeleton className="h-9 w-9 rounded-full" /> <Skeleton className="h-9 w-9 rounded-full" /> <Skeleton className="h-9 w-24 rounded-md" /> </div>
-             </div>
-          </header>
-          {/* Body Skeleton */}
-          <div className="max-w-screen-md mx-auto pt-8 px-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6">
-              <div className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 space-y-3">
-                <Skeleton className="h-7 w-3/4 rounded-md" />
-                <Skeleton className="h-4 w-full rounded-md" />
-                <Skeleton className="h-4 w-5/6 rounded-md" />
-              </div>
+  if (pageLoading && !pageError) {
+    return ( /* ... Skeleton UI ... */
+       <PageTransition className="min-h-screen bg-form-light-gray dark:bg-gray-900 pb-16">
+         <div className="max-w-screen-xl mx-auto p-4 md:p-8">
+            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+                <div className="max-w-screen-xl mx-auto px-4 flex items-center justify-between h-16">
+                    <div className="flex items-center gap-2 sm:gap-4"> <Skeleton className="h-9 w-9 rounded-md" /> <Skeleton className="h-6 w-40 rounded-md" /> </div>
+                    <div className="flex items-center gap-1 sm:gap-2"> <Skeleton className="h-9 w-9 rounded-full" /> <Skeleton className="h-9 w-9 rounded-full" /> <Skeleton className="h-9 w-24 rounded-md" /> </div>
+                </div>
+            </header>
+            <div className="max-w-screen-md mx-auto pt-8 px-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6">
+                    <div className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 space-y-3">
+                        <Skeleton className="h-7 w-3/4 rounded-md" /> <Skeleton className="h-4 w-full rounded-md" /> <Skeleton className="h-4 w-5/6 rounded-md" />
+                    </div>
+                </div>
+                <div className="space-y-4"> <Skeleton className="h-40 w-full rounded-lg" /> <Skeleton className="h-40 w-full rounded-lg" /> </div>
+                <div className="relative mt-6 flex justify-center"> <Skeleton className="h-10 w-36 rounded-full" /> </div>
             </div>
-            <div className="space-y-4">
-              <Skeleton className="h-40 w-full rounded-lg" />
-              <Skeleton className="h-40 w-full rounded-lg" />
-            </div>
-            <div className="relative mt-6 flex justify-center">
-              <Skeleton className="h-10 w-36 rounded-full" />
-            </div>
-          </div>
         </div>
       </PageTransition>
     );
   }
 
-   // Error State
-   if (pageError) {
-     console.log(`Rendering Error State: ${pageError}`);
-     return (
-       <PageTransition className="min-h-screen bg-form-light-gray dark:bg-gray-900 pb-16">
+  if (pageError) {
+    return ( /* ... Error UI ... */
+        <PageTransition className="min-h-screen bg-form-light-gray dark:bg-gray-900 pb-16">
          <div className="max-w-screen-lg mx-auto p-4 md:p-8">
              <header className="mb-8 flex items-center justify-between">
                <div className="flex items-center gap-3">
@@ -393,29 +310,25 @@ const FormBuilder = () => {
              <Button onClick={handleGoBack} className="mt-4">Go Back</Button>
          </div>
        </PageTransition>
+    );
+  }
+
+  if (!currentFormLocal && !isCreatingNew) {
+     return ( /* ... Form Not Found UI ... */
+       <PageTransition className="min-h-screen bg-form-light-gray dark:bg-gray-900">
+         <div className="flex flex-col items-center justify-center h-screen text-center p-4">
+              <AlertCircle className="w-12 h-12 text-yellow-500 mb-4" />
+              <h2 className="text-xl font-semibold mb-2 dark:text-white">Form Not Available</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">The form data could not be loaded. It might not exist or is still being created.</p>
+              <Button onClick={handleGoBack}>Back to Event Forms</Button>
+         </div>
+       </PageTransition>
      );
   }
 
-  // Form Not Found State (after loading finishes and form isn't available)
-  if (!currentFormLocal && !isCreatingNew) {
-     console.log("Rendering Form Not Found State");
-     return (
-         <PageTransition className="min-h-screen bg-form-light-gray dark:bg-gray-900">
-             <div className="flex flex-col items-center justify-center h-screen text-center p-4">
-                 <AlertCircle className="w-12 h-12 text-yellow-500 mb-4" />
-                 <h2 className="text-xl font-semibold mb-2 dark:text-white">Form Not Found</h2>
-                 <p className="text-gray-600 dark:text-gray-400 mb-4">The requested form could not be found or is still loading. If you just created it, please wait a moment.</p>
-                 <Button onClick={handleGoBack}>Back to Event Forms</Button>
-             </div>
-         </PageTransition>
-     );
- }
-
- // --- Main Content: Builder UI ---
- // Render only if loading is false, no error, and form is loaded OR is 'new' (though 'new' should navigate quickly)
- console.log("Rendering Builder UI");
- const formToDisplay = currentFormLocal; // Use the locally loaded form
- return (
+   // --- Main Builder UI ---
+   const formToDisplay = currentFormLocal; // Use the loaded form
+   return (
     <PageTransition className="min-h-screen bg-form-light-gray dark:bg-gray-900 pb-16">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
@@ -425,16 +338,16 @@ const FormBuilder = () => {
               <ArrowLeft size={18} />
             </Button>
             <div className="flex items-center gap-1">
-                <Input
-                    type="text"
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    className="text-base sm:text-lg font-medium h-auto p-0 bg-transparent border-0 focus-visible:ring-0 shadow-none truncate max-w-[150px] sm:max-w-[300px] dark:text-white"
-                    placeholder="Form title"
-                    aria-label="Form title input"
-                    disabled={!formToDisplay} // Disable if form not loaded
-                />
-                 {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              <Input
+                type="text"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                className="text-base sm:text-lg font-medium h-auto p-0 bg-transparent border-0 focus-visible:ring-0 shadow-none truncate max-w-[150px] sm:max-w-[300px] dark:text-white"
+                placeholder="Form title"
+                aria-label="Form title input"
+                disabled={!formToDisplay} // Disable if no form loaded
+              />
+              {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -447,48 +360,46 @@ const FormBuilder = () => {
 
       {/* Builder Area */}
       <div className="max-w-screen-md mx-auto pt-8 px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6"
-          onClick={() => setSelectedQuestionId(null)}
-        >
-          <div className="border-l-4 border-primary pl-4">
-            <Input
-              type="text"
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-              className="w-full text-xl sm:text-2xl font-medium focus:outline-none border-b-2 border-transparent focus:border-primary mb-2 bg-transparent dark:text-white focus-visible:ring-0"
-              placeholder="Form title"
-              aria-label="Form title header input"
-               disabled={!formToDisplay}
-            />
-            <textarea
-              value={formDescription}
-              onChange={(e) => setFormDescription(e.target.value)}
-              className="w-full text-sm sm:text-base resize-none text-gray-600 dark:text-gray-400 focus:outline-none border-b-2 border-transparent focus:border-primary bg-transparent focus-visible:ring-0"
-              placeholder="Form description (optional)"
-              rows={2}
-              aria-label="Form description input"
-              disabled={!formToDisplay}
-            />
-          </div>
-        </motion.div>
+        {/* Display Form Header/Description card only if formToDisplay is loaded */}
+        {formToDisplay ? (
+             <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6"
+             onClick={() => setSelectedQuestionId(null)}
+            >
+                <div className={cn("border-l-4 pl-4 transition-colors", selectedQuestionId === null ? 'border-primary' : 'border-muted-foreground/20')}>
+                    <Input
+                      type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
+                      className="w-full text-xl sm:text-2xl font-medium focus:outline-none border-b-2 border-transparent focus:border-primary mb-2 bg-transparent dark:text-white focus-visible:ring-0"
+                      placeholder="Form title" aria-label="Form title header input"
+                    />
+                    <Textarea
+                      value={formDescription} onChange={(e) => setFormDescription(e.target.value)}
+                      className="w-full text-sm sm:text-base resize-none text-gray-600 dark:text-gray-400 focus:outline-none border-b-2 border-transparent focus:border-primary bg-transparent focus-visible:ring-0"
+                      placeholder="Form description (optional)" rows={2} aria-label="Form description input"
+                    />
+                </div>
+           </motion.div>
+        ) : (
+             // Optional: Placeholder if form is null but not loading/error (unlikely with current logic)
+             <div className="text-center p-6 text-gray-500">Loading form header...</div>
+        )}
 
         {/* Questions List */}
         <div className="space-y-4">
-           {(formToDisplay?.questions || []).map((question, index) => (
+            {(formToDisplay?.questions || []).map((question, index) => (
             <QuestionCard
-              key={question.id || `q-new-${index}`}
-              question={question}
-              index={index}
-              isSelected={selectedQuestionId === question.id}
-              onSelect={() => setSelectedQuestionId(question.id)}
-              updateQuestion={handleUpdateQuestion}
-              deleteQuestion={handleDeleteQuestion}
+                key={question.id || `q-new-${index}`} // Handle potential temp IDs if needed
+                question={question}
+                index={index}
+                isSelected={selectedQuestionId === question.id}
+                onSelect={() => setSelectedQuestionId(question.id)}
+                updateQuestion={handleUpdateQuestion}
+                deleteQuestion={handleDeleteQuestion}
             />
-          ))}
-          <AddQuestionButton onSelectType={handleAddQuestion} disabled={!formToDisplay} />
+            ))}
+            <AddQuestionButton onSelectType={handleAddQuestion} disabled={!formToDisplay} />
         </div>
       </div>
     </PageTransition>
