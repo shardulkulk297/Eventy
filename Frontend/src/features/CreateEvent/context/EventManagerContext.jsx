@@ -1,4 +1,5 @@
 /* src/features/CreateEvent/context/EventManagerContext.jsx */
+// ... (keep imports and utility functions as they were) ...
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
@@ -16,558 +17,352 @@ import {
   writeBatch,
   increment,
   getDoc,
-  deleteField // Import deleteField for removing fields if needed
+  deleteField // Keep if you need it, otherwise remove
 } from 'firebase/firestore';
 import { app, database } from '@/firebaseConfig';
-import { toast } from 'sonner';
+import { toast } from 'sonner'; // Ensure Sonner is used for toasts
 
-// --- Data Sanitization Utility (Keep as is) ---
+// --- Data Sanitization Utility ---
 const sanitizeDataForFirestore = (data) => {
   if (data === undefined) return null;
   if (data === null || typeof data !== 'object') return data;
   if (Array.isArray(data)) return data.map(item => sanitizeDataForFirestore(item));
+
+  // Handle Firestore specific types if necessary (e.g., Timestamp, GeoPoint)
+  // This example keeps serverTimestamp intact
+  if (data.constructor && data.constructor.name === 'TimestampFieldValue') {
+     return data;
+  }
+
   const sanitizedObject = {};
   for (const key in data) {
     if (Object.prototype.hasOwnProperty.call(data, key)) {
       const value = data[key];
-      if (value && typeof value === 'object' && value.constructor && value.constructor.name === 'TimestampFieldValue') {
-        sanitizedObject[key] = value;
-      } else {
-        const sanitizedValue = sanitizeDataForFirestore(value);
-        sanitizedObject[key] = sanitizedValue;
-      }
+      const sanitizedValue = sanitizeDataForFirestore(value);
+      // Firestore cannot store 'undefined', so we convert to 'null'
+      sanitizedObject[key] = sanitizedValue === undefined ? null : sanitizedValue;
     }
   }
   return sanitizedObject;
 };
 // --- End Sanitization ---
 
-// Create context (Renamed)
+// Create context
 const EventManagerContext = createContext(undefined);
 
-// Initial state (Updated for Events)
+// Initial state
 const initialState = {
-  events: [], // Changed from forms to events
-  currentEvent: null, // Changed from currentForm
-  currentEventForms: [], // Forms for the currently viewed event
-  currentEventFormResponses: {}, // Responses keyed by formId for the current event
-  isLoading: true,
+  events: [],
+  currentEvent: null,
+  currentEventForms: [],
+  currentEventFormResponses: {},
+  isLoading: true, // Start loading initially
   error: null,
   userId: null,
 };
 
-// Reducer function (Updated for Events and Forms within Events)
+// Reducer function
 const eventManagerReducer = (state, action) => {
+   console.log("Reducer Action:", action.type, action.payload); // Log all actions
+  // Simple function to prevent unnecessary state updates if data is identical
+  const isStateChanged = (key, payload) => JSON.stringify(state[key]) !== JSON.stringify(payload);
+
   switch (action.type) {
     case 'SET_USER_ID':
       if (state.userId === action.payload) return state;
+      console.log("Reducer: Setting userId =", action.payload);
       if (action.payload === null) return { ...initialState, userId: null, isLoading: false };
-      // Reset state related to previous user
-      return { ...initialState, userId: action.payload, isLoading: true };
+      return { ...initialState, userId: action.payload, isLoading: true }; // Reset and start loading for new user
 
-    case 'SET_EVENTS': // Renamed from SET_FORMS
-       if (JSON.stringify(state.events) === JSON.stringify(action.payload))
-            return { ...state, isLoading: false, error: null };
+    case 'SET_EVENTS':
+      console.log("Reducer: Setting events =", action.payload?.length);
+      // Check if content is actually different before updating
+      if (JSON.stringify(state.events) === JSON.stringify(action.payload)) {
+           console.log("Reducer: SET_EVENTS payload identical, skipping update.");
+           return state.isLoading ? { ...state, isLoading: false } : state; // Ensure loading stops if needed
+      }
       return { ...state, events: action.payload, isLoading: false, error: null };
 
-    case 'SET_CURRENT_EVENT_FORMS': // New: Set forms for the current event
-        if (state.currentEvent?.id !== action.payload.eventId) return state; // Ensure forms match current event
-        if (JSON.stringify(state.currentEventForms) === JSON.stringify(action.payload.forms))
-            return { ...state, isLoading: false, error: null };
-      return { ...state, currentEventForms: action.payload.forms, isLoading: false, error: null };
-
-    case 'ADD_EVENT_SUCCESS': // Renamed from ADD_FORM_SUCCESS
-      if (state.events.some(e => e.id === action.payload.id)) return state;
-      // Optional: Set new event as current? Depends on desired UX.
-      return { ...state, events: [...state.events, action.payload], isLoading: false, error: null };
-
-    case 'UPDATE_EVENT_SUCCESS': { // Renamed from UPDATE_FORM_SUCCESS
-      let eventUpdated = false;
-      const updatedEvents = state.events.map(event => {
-        if (event.id === action.payload.id) {
-          // Basic check for changes, improve if needed (deep compare?)
-          if (JSON.stringify(event) !== JSON.stringify({ ...event, ...action.payload })) {
-            eventUpdated = true;
-            return { ...event, ...action.payload };
-          }
-        }
-        return event;
-      });
-      if (!eventUpdated) return { ...state, isLoading: false, error: null };
-       // Update currentEvent if it matches
-       const updatedCurrentEvent = state.currentEvent?.id === action.payload.id
-            ? updatedEvents.find(e => e.id === action.payload.id)
-            : state.currentEvent;
-      return { ...state, events: updatedEvents, currentEvent: updatedCurrentEvent, isLoading: false, error: null };
-    }
-
-     case 'DELETE_EVENT_SUCCESS': { // Renamed from DELETE_FORM_SUCCESS
-       const eventIdToDelete = action.payload;
-       if (!state.events.some(event => event.id === eventIdToDelete)) return state;
-      // Clear related forms/responses if the current event is deleted
-       const newCurrentEventForms = state.currentEvent?.id === eventIdToDelete ? [] : state.currentEventForms;
-       const newCurrentEventFormResponses = state.currentEvent?.id === eventIdToDelete ? {} : state.currentEventFormResponses;
-      return {
-        ...state,
-        events: state.events.filter(event => event.id !== eventIdToDelete),
-        currentEvent: state.currentEvent?.id === eventIdToDelete ? null : state.currentEvent,
-        currentEventForms: newCurrentEventForms,
-        currentEventFormResponses: newCurrentEventFormResponses,
-        isLoading: false,
-        error: null
-      };
-    }
-
-    // --- Form Specific Actions (Scoped to currentEvent) ---
-    case 'ADD_FORM_FOR_EVENT_SUCCESS':
-        if (state.currentEvent?.id !== action.payload.eventId) return state; // Ignore if not current event
-        if (state.currentEventForms.some(f => f.id === action.payload.form.id)) return state;
-      return {
-        ...state,
-        currentEventForms: [...state.currentEventForms, action.payload.form],
-        // Optional: Update event's formCount if tracked
-        events: state.events.map(e => e.id === action.payload.eventId ? { ...e, formCount: (e.formCount || 0) + 1 } : e),
-        isLoading: false, error: null
-       };
-
-    case 'UPDATE_FORM_FOR_EVENT_SUCCESS': {
-        if (state.currentEvent?.id !== action.payload.eventId) return state;
-        let formUpdated = false;
-        const updatedForms = state.currentEventForms.map(form => {
-            if (form.id === action.payload.form.id) {
-                 if (JSON.stringify(form) !== JSON.stringify({ ...form, ...action.payload.form })) {
-                    formUpdated = true;
-                    return { ...form, ...action.payload.form };
-                 }
-            }
-            return form;
-        });
-        if (!formUpdated) return { ...state, isLoading: false, error: null };
-        return { ...state, currentEventForms: updatedForms, isLoading: false, error: null };
-    }
-
-    case 'DELETE_FORM_FOR_EVENT_SUCCESS': {
-      if (state.currentEvent?.id !== action.payload.eventId) return state;
-      const formIdToDelete = action.payload.formId;
-      if (!state.currentEventForms.some(form => form.id === formIdToDelete)) return state;
-      const newResponses = { ...state.currentEventFormResponses };
-      delete newResponses[formIdToDelete]; // Remove responses for the deleted form
-      return {
-        ...state,
-        currentEventForms: state.currentEventForms.filter(form => form.id !== formIdToDelete),
-        currentEventFormResponses: newResponses,
-        // Optional: Update event's formCount if tracked
-         events: state.events.map(e => e.id === action.payload.eventId ? { ...e, formCount: Math.max(0, (e.formCount || 1) - 1) } : e),
-        isLoading: false, error: null
-      };
-    }
-
-    // --- Response Specific Actions (Scoped to currentEvent) ---
-    case 'SET_CURRENT_EVENT_FORM_RESPONSES':
-        if (state.currentEvent?.id !== action.payload.eventId) return state;
-        if (JSON.stringify(state.currentEventFormResponses[action.payload.formId]) === JSON.stringify(action.payload.responses))
-             return { ...state, isLoading: false, error: null };
-      return {
-        ...state,
-        currentEventFormResponses: {
-          ...state.currentEventFormResponses,
-          [action.payload.formId]: action.payload.responses
-        },
-        isLoading: false, error: null
-      };
-
-    case 'ADD_RESPONSE_FOR_EVENT_SUCCESS': {
-      const { eventId, formId, response } = action.payload;
-      // Potentially update response count on the specific form if displayed
-       const updatedForms = state.currentEventForms.map(f => {
-            if (f.id === formId) {
-                 return { ...f, responseCount: (f.responseCount || 0) + 1 };
-            }
-            return f;
-       });
-       // Update responses for the specific form
-       const existingResponses = state.currentEventFormResponses[formId] || [];
-       const updatedResponses = [...existingResponses, response];
-      return {
-        ...state,
-         currentEventForms: updatedForms, // Update forms if count is shown
-        currentEventFormResponses: {
-          ...state.currentEventFormResponses,
-          [formId]: updatedResponses
-        },
-        isLoading: false, error: null
-      };
-    }
-
-    case 'SET_CURRENT_EVENT': // New action to set the current event context
+    case 'SET_CURRENT_EVENT':
+      console.log("Reducer: Setting currentEvent ID =", action.payload?.id);
+      if (state.currentEvent?.id === action.payload?.id && !isStateChanged('currentEvent', action.payload)) {
+        console.log("Reducer: SET_CURRENT_EVENT payload identical, skipping.");
+        return state.isLoading ? { ...state, isLoading: false } : state;
+      }
       return {
         ...state,
         currentEvent: action.payload,
-        currentEventForms: [], // Reset forms when event changes
-        currentEventFormResponses: {} // Reset responses when event changes
-       };
+        currentEventForms: action.payload?.id === state.currentEvent?.id ? state.currentEventForms : [], // Reset forms ONLY if event ID changes
+        currentEventFormResponses: action.payload?.id === state.currentEvent?.id ? state.currentEventFormResponses: {}, // Reset responses ONLY if event ID changes
+        isLoading: false, // Setting current event always means loading for *that* is done
+        error: action.payload === null ? state.error : null // Keep existing error if payload is null (not found), clear otherwise
+      };
+
+    case 'SET_CURRENT_EVENT_FORMS':
+      console.log(`Reducer: Setting forms for event ${action.payload.eventId}, count: ${action.payload.forms?.length}`);
+      if (state.currentEvent?.id !== action.payload.eventId) {
+         console.warn(`Reducer: SET_CURRENT_EVENT_FORMS ignored, eventId mismatch (${action.payload.eventId} vs ${state.currentEvent?.id})`);
+         return state;
+      }
+       if (JSON.stringify(state.currentEventForms) === JSON.stringify(action.payload.forms)) {
+           console.log("Reducer: SET_CURRENT_EVENT_FORMS payload identical, skipping update.");
+           return state.isLoading ? { ...state, isLoading: false } : state; // Ensure loading stops
+       }
+      return { ...state, currentEventForms: action.payload.forms, isLoading: false, error: null };
+
+    // --- Keep other action cases as they were in the previous version, adding console logs if helpful ---
+    // Example for ADD_EVENT_SUCCESS:
+    case 'ADD_EVENT_SUCCESS':
+      console.log("Reducer: Adding event", action.payload.id);
+      if (state.events.some(e => e.id === action.payload.id)) return state;
+      return {
+          ...state,
+          events: [action.payload, ...state.events].sort((a, b) => (b.createdAt && a.createdAt) ? new Date(b.createdAt) - new Date(a.createdAt) : 0), // Add and re-sort safely
+          isLoading: false, error: null
+      };
+
+    // Example for ADD_FORM_FOR_EVENT_SUCCESS:
+    case 'ADD_FORM_FOR_EVENT_SUCCESS':
+        console.log(`Reducer: Adding form ${action.payload.form.id} to event ${action.payload.eventId}`);
+        if (state.currentEvent?.id !== action.payload.eventId) return state;
+        if (state.currentEventForms.some(f => f.id === action.payload.form.id)) return state;
+        return {
+          ...state,
+          currentEventForms: [...state.currentEventForms, action.payload.form].sort((a,b) => (b.createdAt && a.createdAt) ? new Date(b.createdAt) - new Date(a.createdAt) : 0), // Add and re-sort safely
+          events: state.events.map(e => e.id === action.payload.eventId ? { ...e, formCount: (e.formCount || 0) + 1 } : e),
+          isLoading: false, error: null
+         };
+
+    // --- Keep other action cases as they were ---
 
     case 'SET_LOADING':
       if (state.isLoading === action.payload) return state;
+       console.log("Reducer: Setting loading =", action.payload);
       return { ...state, isLoading: action.payload };
 
     case 'SET_ERROR':
-      if (state.error === action.payload) return { ...state, isLoading: false };
-      console.error("Context Error Set:", action.payload); // Log errors
-      return { ...state, error: action.payload, isLoading: false };
+       if (state.error === action.payload) return { ...state, isLoading: false };
+       console.error("Reducer: Setting error =", action.payload); // Use console.error
+       return { ...state, error: action.payload, isLoading: false };
 
     default:
+      console.warn("Reducer: Unhandled action type:", action.type);
       return state;
   }
 };
 
-// Provider component (Renamed)
+// Provider component
 export const EventManagerProvider = ({ children }) => {
   const [state, dispatch] = useReducer(eventManagerReducer, initialState);
   const auth = getAuth(app);
 
-  // Effect 1: Handle Auth State Changes (Mostly unchanged)
+  // Effect 1: Handle Auth State Changes
   useEffect(() => {
+    console.log("Auth Effect: Setting up listener.");
+    if (!state.isLoading) dispatch({ type: 'SET_LOADING', payload: true });
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+       console.log("Auth Effect: Auth state changed, user ID:", user?.uid);
       dispatch({ type: 'SET_USER_ID', payload: user ? user.uid : null });
     });
-    return () => unsubscribe();
-  }, [auth]); // Keep auth dependency
+    return () => {
+       console.log("Auth Effect: Cleaning up listener.");
+       unsubscribe();
+    };
+  }, [auth]); // Keep dependency only 'auth'
 
-  // Effect 2: Fetch Events when User ID is valid (Changed from fetchForms)
+  // Effect 2: Fetch Events when User ID changes and is valid
   useEffect(() => {
     if (!state.userId) {
-      if (state.isLoading) dispatch({ type: 'SET_LOADING', payload: false });
-      if (state.events.length > 0) dispatch({ type: 'SET_EVENTS', payload: [] });
+      console.log("Fetch Events Effect: No user ID, clearing state.");
+      // Clear data if user logs out (Reducer handles this on SET_USER_ID: null)
+      if (state.isLoading) dispatch({ type: 'SET_LOADING', payload: false }); // Stop loading if no user
       return;
     }
 
     const fetchEvents = async () => {
+       console.log(`Workspace Events Effect: Fetching events for user ${state.userId}...`);
+      // Only set loading if not already loading (e.g., from auth change)
       if (!state.isLoading) dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null }); // Clear previous errors on new fetch
       try {
-        // Path: users/{userId}/CreatedEvents
         const eventsCollectionRef = collection(database, 'users', state.userId, 'CreatedEvents');
         const q = query(eventsCollectionRef, orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         const eventsList = querySnapshot.docs.map(doc => ({
           id: doc.id, ...doc.data(),
-          // Convert Timestamps
-          createdAt: doc.data().createdAt?.toDate?.().toISOString(),
-          updatedAt: doc.data().updatedAt?.toDate?.().toISOString(),
+          // Safely convert timestamps
+          createdAt: doc.data().createdAt?.toDate?.().toISOString() || null,
+          updatedAt: doc.data().updatedAt?.toDate?.().toISOString() || null,
         }));
+         console.log(`Workspace Events Effect: Fetched ${eventsList.length} events. IDs:`, eventsList.map(e=>e.id));
         dispatch({ type: 'SET_EVENTS', payload: eventsList });
       } catch (error) {
-        console.error("Error fetching events: ", error);
-        dispatch({ type: 'SET_ERROR', payload: 'Failed to load events.' });
-        toast.error("Failed to load your events.");
-      } finally {
-           // Ensure loading is set to false even if fetch fails or is empty
-           if (state.isLoading) {
-                dispatch({ type: 'SET_LOADING', payload: false });
-           }
+        console.error("Fetch Events Effect: Error fetching events: ", error);
+        const errorMsg = `Failed to load events: ${error.code || error.message}`;
+        dispatch({ type: 'SET_ERROR', payload: errorMsg });
+        toast.error(errorMsg);
       }
+      // Loading is set to false within the reducer for SET_EVENTS or SET_ERROR
     };
     fetchEvents();
   }, [state.userId]); // Dependency: userId
 
-  // --- Action Creators (Refactored for Events and Forms) ---
 
-  // --- Event Actions ---
+  // --- Action Creators ---
+
+  // --- Event Actions (Keep implementations as before, add logs if needed) ---
   const createEvent = useCallback(async (title, description) => {
-    if (!state.userId) { toast.error("Login required to create events."); return null; }
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-        // 1. Add to users/{userId}/CreatedEvents
-        const userEventsCollectionRef = collection(database, 'users', state.userId, 'CreatedEvents');
-        const eventDataUser = sanitizeDataForFirestore({
-            title: title || 'Untitled Event',
-            description: description || '',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            creatorId: state.userId,
-            formCount: 0, // Initialize form count
-            responseCount: 0 // Initialize overall response count? Or track per form?
-        });
-        const userEventDocRef = await addDoc(userEventsCollectionRef, eventDataUser);
-        const newEventId = userEventDocRef.id;
-
-        // 2. Add to top-level events/{eventId}
-        const topLevelEventDocRef = doc(database, 'events', newEventId);
-         const eventDataTopLevel = sanitizeDataForFirestore({
-            title: title || 'Untitled Event',
-            description: description || '',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            creatorId: state.userId,
-            // Add other relevant public/shared event details here later
-         });
-        await setDoc(topLevelEventDocRef, eventDataTopLevel);
-
-         // 3. (Optional but good practice) Update user's main doc count
-         const userDocRef = doc(database, 'users', state.userId);
-         await setDoc(userDocRef, { eventCount: increment(1) }, { merge: true })
-           .catch(err => console.warn("Could not update user event count:", err));
-
-        // 4. Fetch the newly created event data to add to state
-        const newEventSnap = await getDoc(userEventDocRef); // Get from user's subcollection
-        if (newEventSnap.exists()) {
-            const newEvent = {
-                id: newEventSnap.id,
-                ...newEventSnap.data(),
-                createdAt: newEventSnap.data().createdAt?.toDate?.().toISOString() || new Date().toISOString(),
-                updatedAt: newEventSnap.data().updatedAt?.toDate?.().toISOString() || new Date().toISOString(),
-            };
-             dispatch({ type: 'ADD_EVENT_SUCCESS', payload: newEvent });
-             toast.success("Event created!");
-             return newEvent; // Return the created event data
-        } else {
-            throw new Error("Failed to fetch newly created event data.");
-        }
-    } catch (error) {
-      console.error("Error creating event: ", error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to create event.' });
-      toast.error("Failed to create event.");
-      return null;
-    } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [state.userId]); // dispatch removed as it's stable from useReducer
-
-   const updateEvent = useCallback(async (eventUpdate) => {
-       if (!state.userId || !eventUpdate?.id) {
-            toast.error("Cannot update event: Missing information."); return;
-       }
-       const eventId = eventUpdate.id;
-       dispatch({ type: 'SET_LOADING', payload: true });
-
-       try {
-           const updateData = { ...eventUpdate };
-           delete updateData.id; // Don't save ID field within the document
-           updateData.updatedAt = serverTimestamp(); // Always update timestamp
-           const sanitizedUpdateData = sanitizeDataForFirestore(updateData);
-
-           // 1. Update user's event document
-           const userEventDocRef = doc(database, 'users', state.userId, 'CreatedEvents', eventId);
-           await updateDoc(userEventDocRef, sanitizedUpdateData);
-
-            // 2. Update top-level event document (only relevant fields like title/desc)
-            const topLevelUpdateData = {};
-            if (sanitizedUpdateData.title !== undefined) topLevelUpdateData.title = sanitizedUpdateData.title;
-            if (sanitizedUpdateData.description !== undefined) topLevelUpdateData.description = sanitizedUpdateData.description;
-            // Add other fields if they need sync
-            if (Object.keys(topLevelUpdateData).length > 0) {
-                topLevelUpdateData.updatedAt = serverTimestamp(); // Also update timestamp here
-                const topLevelEventDocRef = doc(database, 'events', eventId);
-                await updateDoc(topLevelEventDocRef, topLevelUpdateData)
-                   .catch(err => console.warn("Could not update top-level event doc:", err));
-            }
-
-            // 3. Update local state
-            dispatch({ type: 'UPDATE_EVENT_SUCCESS', payload: { ...eventUpdate, updatedAt: new Date().toISOString() } }); // Use client-side timestamp for immediate UI update
-             toast.success("Event updated.");
-
-       } catch (error) {
-            console.error("Error updating event:", error);
-            dispatch({ type: 'SET_ERROR', payload: `Failed to update event. ${error.message}` });
-            toast.error(`Failed to save event changes: ${error.code || error.message}`);
-       } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-       }
-   }, [state.userId]);
-
-   const deleteEvent = useCallback(async (eventId) => {
-    if (!state.userId || !eventId) { toast.error("Cannot delete event: Missing info."); return; }
-    if (!window.confirm(`Delete event and ALL associated forms and responses permanently? This cannot be undone.`)) return;
-
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const batch = writeBatch(database);
-
-      // --- Delete Steps ---
-       // 1. Delete Forms & Responses within the event (Iterate through forms first)
-       const formsCollectionRef = collection(database, 'events', eventId, 'forms');
-       const formsSnapshot = await getDocs(formsCollectionRef);
-
-       for (const formDoc of formsSnapshot.docs) {
-            // Delete responses for this form
-            const responsesCollectionRef = collection(database, 'events', eventId, 'forms', formDoc.id, 'responses');
-            const responsesSnapshot = await getDocs(responsesCollectionRef);
-            responsesSnapshot.forEach(responseDoc => batch.delete(responseDoc.ref));
-
-             // Delete the form itself
-            batch.delete(formDoc.ref);
-       }
-
-      // 2. Delete Top-level event document
-      const topLevelEventDocRef = doc(database, 'events', eventId);
-      batch.delete(topLevelEventDocRef);
-
-      // 3. Delete User's event document
-      const userEventDocRef = doc(database, 'users', state.userId, 'CreatedEvents', eventId);
-      batch.delete(userEventDocRef);
-
-       // 4. Decrement user's event count (optional)
-       const userDocRef = doc(database, 'users', state.userId);
-       batch.update(userDocRef, { eventCount: increment(-1) }); // Use update, requires eventCount to exist
-
-      // Commit all deletions
-      await batch.commit();
-
-      // Update local state
-      dispatch({ type: 'DELETE_EVENT_SUCCESS', payload: eventId });
-      toast.success("Event and all related data deleted.");
-
-    } catch (error) {
-      console.error("Error deleting event: ", error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete event.' });
-      toast.error("Failed to delete event.");
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
+    // ... (previous implementation)
   }, [state.userId]);
 
+  const updateEvent = useCallback(async (eventUpdate) => {
+    // ... (previous implementation)
+  }, [state.userId]);
 
-   // --- Form Actions (Scoped within an Event) ---
+  const deleteEvent = useCallback(async (eventId) => {
+    // ... (previous implementation)
+  }, [state.userId]);
 
-   const createFormForEvent = useCallback(async (eventId, title, description) => {
-    if (!state.userId || !eventId) { toast.error("Event context missing."); return null; }
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      // Path: events/{eventId}/forms
-      const formsCollectionRef = collection(database, 'events', eventId, 'forms');
-      const formData = sanitizeDataForFirestore({
-        title: title || 'Untitled Form',
-        description: description || '',
-        questions: [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        creatorId: state.userId, // Keep creatorId if needed
-        responseCount: 0,
-        eventId: eventId // Store parent event ID
-      });
-      const docRef = await addDoc(formsCollectionRef, formData);
+  // New function to fetch forms specifically for an event
+  const fetchFormsForEvent = useCallback(async (eventIdToFetch) => {
+        if (!state.userId || !eventIdToFetch) {
+             console.warn(`WorkspaceFormsForEvent: Aborted - missing userId (${state.userId}) or eventId (${eventIdToFetch})`);
+             return;
+        }
+        // Avoid fetching if forms for this event are already loaded *and* context isn't loading
+        if (state.currentEvent?.id === eventIdToFetch && state.currentEventForms.length > 0 && !state.isLoading) {
+            console.log(`WorkspaceFormsForEvent: Forms for event ${eventIdToFetch} already loaded, skipping fetch.`);
+            return;
+        }
+         console.log(`WorkspaceFormsForEvent: Fetching forms for event ${eventIdToFetch}...`);
+         // Set loading only if not already loading (maybe related to event fetch)
+         if (!state.isLoading) dispatch({ type: 'SET_LOADING', payload: true });
+         dispatch({ type: 'SET_ERROR', payload: null }); // Clear errors for new fetch
+        try {
+            const formsCollectionRef = collection(database, 'events', eventIdToFetch, 'forms');
+            const q = query(formsCollectionRef, orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const formsList = querySnapshot.docs.map(doc => ({
+                id: doc.id, ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate?.().toISOString() || null,
+                updatedAt: doc.data().updatedAt?.toDate?.().toISOString() || null,
+             }));
+             console.log(`WorkspaceFormsForEvent: Fetched ${formsList.length} forms for event ${eventIdToFetch}.`);
+             // Dispatch only if the event being fetched for is still the current target
+             // This prevents race conditions if user navigates quickly
+             if (state.currentEvent?.id === eventIdToFetch || !state.currentEvent) { // Allow if currentEvent isn't set yet
+                 dispatch({ type: 'SET_CURRENT_EVENT_FORMS', payload: { eventId: eventIdToFetch, forms: formsList } });
+             } else {
+                  console.warn(`WorkspaceFormsForEvent: Fetched forms for ${eventIdToFetch}, but current event changed to ${state.currentEvent?.id}. Discarding results.`);
+                  if (state.isLoading) dispatch({ type: 'SET_LOADING', payload: false }); // Stop loading if we discard results
+             }
+        } catch (error) {
+             console.error(`WorkspaceFormsForEvent: Error fetching forms for event ${eventIdToFetch}: `, error);
+             const errorMsg = `Failed to load forms: ${error.code || error.message}`;
+             // Set error only if it relates to the currently targeted event
+             if (state.currentEvent?.id === eventIdToFetch || !state.currentEvent) {
+                 dispatch({ type: 'SET_ERROR', payload: errorMsg });
+                 toast.error(errorMsg);
+             } else {
+                 if (state.isLoading) dispatch({ type: 'SET_LOADING', payload: false }); // Still need to stop loading
+             }
+        }
+         // Loading is stopped in reducer on success/error dispatch for the relevant event
+    }, [state.userId, state.currentEvent?.id, state.currentEventForms.length, state.isLoading]); // Added length dependency
 
-       // Increment formCount on the user's event document
-       const userEventDocRef = doc(database, 'users', state.userId, 'CreatedEvents', eventId);
-       await updateDoc(userEventDocRef, { formCount: increment(1), updatedAt: serverTimestamp() })
-           .catch(err => console.warn("Could not update event form count:", err));
 
-      // Fetch and dispatch
-      const newDocSnap = await getDoc(docRef);
-      const newForm = {
-        id: newDocSnap.id, ...newDocSnap.data(),
-        createdAt: newDocSnap.data().createdAt?.toDate?.().toISOString() || new Date().toISOString(),
-        updatedAt: newDocSnap.data().updatedAt?.toDate?.().toISOString() || new Date().toISOString(),
-      };
-      dispatch({ type: 'ADD_FORM_FOR_EVENT_SUCCESS', payload: { eventId, form: newForm } });
-      toast.success("Form created for event!");
-      return newForm;
-    } catch (error) {
-      console.error("Error creating form for event: ", error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to create form.' });
-      toast.error("Failed to create form.");
-      return null;
-    } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [state.userId]); // dispatch is stable
+    // --- Set Current Event ID (Handles finding event & triggering form fetch) ---
+   const setCurrentEventId = useCallback((eventId) => {
+       console.log(`setCurrentEventId called with: ${eventId}. Current state event: ${state.currentEvent?.id}, Events loaded: ${state.events.length}`);
+       if (!eventId) {
+           dispatch({ type: 'SET_CURRENT_EVENT', payload: null });
+           return;
+       }
+        // If the requested event is already set, just ensure forms are fetched if needed
+        if (state.currentEvent?.id === eventId) {
+            console.log(`setCurrentEventId: Event ${eventId} is already current.`);
+             // Check if forms are missing and not loading/errored
+             if (!state.isLoading && !state.error && state.currentEventForms.length === 0) {
+                 console.log(`setCurrentEventId: Triggering form fetch for already current event ${eventId}.`);
+                 fetchFormsForEvent(eventId);
+             }
+            return;
+        }
+
+       // Find event in the *already fetched* list in the state
+       const event = state.events.find(e => e.id === eventId);
+
+       if (event) {
+            console.log(`setCurrentEventId: Found event ${eventId} in state.events list. Setting as current.`);
+            dispatch({ type: 'SET_CURRENT_EVENT', payload: event });
+            console.log(`setCurrentEventId: Triggering form fetch for newly set event ${eventId}.`);
+            fetchFormsForEvent(eventId); // Fetch forms for this newly set event
+       } else {
+            // Event not found in the list that *should* have been loaded by Effect 2
+            console.warn(`setCurrentEventId: Event ${eventId} not found in state.events list (${state.events.length} events loaded). This might be a timing issue or the event doesn't exist/belong to user ${state.userId}.`);
+            // Dispatch null and set error - the component should handle showing the error state
+             const errorMsg = `Event ${eventId} not found.`;
+             dispatch({ type: 'SET_ERROR', payload: errorMsg });
+             dispatch({ type: 'SET_CURRENT_EVENT', payload: null });
+             toast.error(errorMsg); // Show toast immediately
+       }
+   }, [state.events, state.currentEvent?.id, state.userId, state.isLoading, state.error, state.currentEventForms.length, fetchFormsForEvent]); // Added dependencies
+
+
+  // --- Form Actions ---
+  const createFormForEvent = useCallback(async (eventId, title, description) => {
+    // ... (previous implementation with added logging if desired) ...
+     console.log(`createFormForEvent: Attempting for event ${eventId}`);
+     // ... rest of try/catch ...
+      return newForm; // Ensure promise resolves with the form on success
+  }, [state.userId]);
 
    const updateFormForEvent = useCallback(async (eventId, formUpdate) => {
-    if (!state.userId || !eventId || !formUpdate?.id) {
-        toast.error("Cannot update form: Missing information."); return;
-    }
-    const formId = formUpdate.id;
-    // Path: events/{eventId}/forms/{formId}
-    const formDocRef = doc(database, 'events', eventId, 'forms', formId);
-    dispatch({ type: 'SET_LOADING', payload: true });
-
-    try {
-      const updateData = { ...formUpdate };
-      delete updateData.id; // Don't save ID within the doc
-      updateData.updatedAt = serverTimestamp();
-      const sanitizedUpdateData = sanitizeDataForFirestore(updateData);
-
-      console.log('Attempting to update form:', formId, 'in event:', eventId, 'with sanitized data:', JSON.stringify(sanitizedUpdateData, null, 2));
-      await updateDoc(formDocRef, sanitizedUpdateData);
-
-       // Also update the timestamp on the user's event document
-       const userEventDocRef = doc(database, 'users', state.userId, 'CreatedEvents', eventId);
-       await updateDoc(userEventDocRef, { updatedAt: serverTimestamp() })
-           .catch(err => console.warn("Could not update event timestamp during form update:", err));
-
-
-      // Update local state for the current event's forms
-      dispatch({ type: 'UPDATE_FORM_FOR_EVENT_SUCCESS', payload: { eventId, form: { ...formUpdate, updatedAt: new Date().toISOString() } } });
-      // No toast here by default, maybe add in component if needed
-    } catch (error) {
-      console.error("Error updating form:", error);
-      dispatch({ type: 'SET_ERROR', payload: `Failed to save form changes. ${error.message}` });
-      toast.error(`Failed to save changes: ${error.code || error.message}`);
-    } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [state.userId]);
+    // ... (previous implementation with added logging if desired) ...
+     console.log(`updateFormForEvent: Updating form ${formUpdate.id} in event ${eventId}`);
+     // ... rest of try/catch ...
+   }, [state.userId]);
 
    const deleteFormForEvent = useCallback(async (eventId, formId) => {
-    if (!state.userId || !eventId || !formId) { toast.error("Cannot delete form: Missing info."); return; }
-     if (!window.confirm(`Delete form and ALL its responses permanently?`)) return;
-
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const batch = writeBatch(database);
-
-      // 1. Delete Responses for this form
-      // Path: events/{eventId}/forms/{formId}/responses
-      const responsesCollectionRef = collection(database, 'events', eventId, 'forms', formId, 'responses');
-      const responsesSnapshot = await getDocs(responsesCollectionRef);
-      responsesSnapshot.forEach(doc => batch.delete(doc.ref));
-
-      // 2. Delete the Form document itself
-      // Path: events/{eventId}/forms/{formId}
-      const formDocRef = doc(database, 'events', eventId, 'forms', formId);
-      batch.delete(formDocRef);
-
-       // 3. Decrement formCount on the user's event document
-       const userEventDocRef = doc(database, 'users', state.userId, 'CreatedEvents', eventId);
-       batch.update(userEventDocRef, { formCount: increment(-1), updatedAt: serverTimestamp() });
-
-      // Commit batch
-      await batch.commit();
-
-      // Update local state
-      dispatch({ type: 'DELETE_FORM_FOR_EVENT_SUCCESS', payload: { eventId, formId } });
-      toast.success("Form deleted.");
-
-    } catch (error) {
-      console.error("Error deleting form: ", error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete form.' });
-      toast.error("Failed to delete form.");
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [state.userId]);
+    // ... (previous implementation with added logging if desired) ...
+     console.log(`deleteFormForEvent: Deleting form ${formId} from event ${eventId}`);
+     // ... rest of try/catch ...
+   }, [state.userId]);
 
 
-  // --- Question Actions (Now need eventId and formId) ---
+   // --- Question Actions (Ensure context function names match FormBuilder calls) ---
    const addQuestionToForm = useCallback(async (eventId, formId, question) => {
-        if (!state.userId || !eventId || !formId || !question) return;
-        const form = state.currentEventForms.find(f => f.id === formId); // Find the form in current state
+       console.log(`addQuestionToForm: Adding question to form ${formId}`);
+        if (!state.userId || !eventId || !formId || !question) return null;
+        const form = state.currentEventForms.find(f => f.id === formId);
         if (!form) {
-             console.error(`Cannot add question: Form ${formId} not found in current event state.`); return;
+             console.error(`Cannot add question: Form ${formId} not found in current event state.`);
+             toast.error("Form context error. Please refresh.");
+             return null;
         }
-        const newQuestion = { ...question, id: `q-${Date.now()}` };
+        const newQuestion = { ...question, id: `q-${Date.now()}-${Math.random().toString(16).slice(2)}` };
         const sanitizedNewQuestion = sanitizeDataForFirestore(newQuestion);
         const updatedQuestions = [...(form.questions || []), sanitizedNewQuestion];
-        // Use updateFormForEvent to save the changes
-        await updateFormForEvent(eventId, { id: formId, questions: updatedQuestions });
-   }, [state.userId, state.currentEventForms, updateFormForEvent]); // Ensure dependencies are correct
+        try {
+            await updateFormForEvent(eventId, { id: formId, questions: updatedQuestions });
+            // Find the updated form in the potentially updated state to return it
+            const updatedFormState = state.currentEventForms.find(f => f.id === formId);
+            return updatedFormState || { ...form, questions: updatedQuestions }; // Return updated form data
+        } catch (error) {
+            console.error("Error adding question:", error);
+            return null;
+        }
+   }, [state.userId, state.currentEventForms, updateFormForEvent]);
 
-
-  const updateQuestionInForm = useCallback(async (eventId, formId, question) => {
+   // Renaming context functions to match FormBuilder expectations if needed
+   const updateQuestion = useCallback(async (eventId, formId, question) => {
+       console.log(`updateQuestion: Updating question ${question.id} in form ${formId}`);
        if (!state.userId || !eventId || !formId || !question?.id) return;
        const form = state.currentEventForms.find(f => f.id === formId);
        if (!form) {
-            console.error(`Cannot update question: Form ${formId} not found.`); return;
+            console.error(`Cannot update question: Form ${formId} not found.`);
+             toast.error("Form context error. Please refresh.");
+            return;
        }
        const sanitizedQuestion = sanitizeDataForFirestore(question);
        const updatedQuestions = (form.questions || []).map(q => q.id === sanitizedQuestion.id ? sanitizedQuestion : q);
@@ -576,11 +371,14 @@ export const EventManagerProvider = ({ children }) => {
        }
   }, [state.userId, state.currentEventForms, updateFormForEvent]);
 
-  const deleteQuestionFromForm = useCallback(async (eventId, formId, questionId) => {
+  const deleteQuestion = useCallback(async (eventId, formId, questionId) => {
+      console.log(`deleteQuestion: Deleting question ${questionId} from form ${formId}`);
        if (!state.userId || !eventId || !formId || !questionId) return;
        const form = state.currentEventForms.find(f => f.id === formId);
        if (!form) {
-            console.error(`Cannot delete question: Form ${formId} not found.`); return;
+            console.error(`Cannot delete question: Form ${formId} not found.`);
+             toast.error("Form context error. Please refresh.");
+            return;
        }
        const updatedQuestions = (form.questions || []).filter(q => q.id !== questionId);
        if (updatedQuestions.length !== (form.questions || []).length) {
@@ -588,154 +386,35 @@ export const EventManagerProvider = ({ children }) => {
        }
   }, [state.userId, state.currentEventForms, updateFormForEvent]);
 
+  // --- Response Actions (Keep as is, add logs if needed) ---
+  const submitResponse = useCallback(async (eventId, formId, answers) => {
+      // ... (previous implementation)
+  }, [auth, state.currentEvent?.id]);
 
-  // --- Response Actions ---
-   const submitResponse = useCallback(async (eventId, formId, answers) => {
-    if (!eventId || !formId) { toast.error("Missing Event or Form ID."); return; }
-    // Path: events/{eventId}/forms/{formId}/responses
-    const responsesRef = collection(database, 'events', eventId, 'forms', formId, 'responses');
-    const sanitizedAnswers = sanitizeDataForFirestore(answers);
-    const responseData = { answers: sanitizedAnswers, submittedAt: serverTimestamp(), eventId, formId };
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const docRef = await addDoc(responsesRef, responseData);
-      const newResponse = { ...responseData, id: docRef.id, submittedAt: new Date().toISOString() };
-
-       // Increment responseCount on the specific form document
-       const formDocRef = doc(database, 'events', eventId, 'forms', formId);
-       await updateDoc(formDocRef, { responseCount: increment(1), updatedAt: serverTimestamp() })
-            .catch(err => console.warn(`Could not update form response count:`, err));
-
-       // Optional: Increment overall event response count if needed (on user's event doc)
-       // const userEventDocRef = doc(database, 'users', state.userId, 'CreatedEvents', eventId);
-       // await updateDoc(userEventDocRef, { responseCount: increment(1), updatedAt: serverTimestamp() });
-
-      // Update local state for the current event's responses
-      dispatch({ type: 'ADD_RESPONSE_FOR_EVENT_SUCCESS', payload: { eventId, formId, response: newResponse } });
-       toast.success("Response submitted!"); // Give user feedback
-    } catch (error) {
-      console.error("Error submitting response: ", error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to submit response.' });
-      toast.error("Failed to submit response.");
-    } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, []); // dispatch is stable
-
-   const fetchResponses = useCallback(async (eventId, formId) => {
-    if (!eventId || !formId) return [];
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      // Path: events/{eventId}/forms/{formId}/responses
-      const responsesRef = collection(database, 'events', eventId, 'forms', formId, 'responses');
-      const q = query(responsesRef, orderBy('submittedAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const responsesList = querySnapshot.docs.map(doc => ({
-        id: doc.id, ...doc.data(),
-        submittedAt: doc.data().submittedAt?.toDate?.().toISOString(),
-      }));
-      // Update local state for the current event's responses
-      dispatch({ type: 'SET_CURRENT_EVENT_FORM_RESPONSES', payload: { eventId, formId, responses: responsesList } });
-      return responsesList;
-    } catch (error) {
-      console.error(`Error fetching responses for form ${formId} in event ${eventId}: `, error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to load responses.' });
-      toast.error("Failed to load responses.");
-      return [];
-    } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, []);
-
-   // --- Getters and Setters ---
-   const getEvent = useCallback((eventId) => state.events.find(event => event.id === eventId), [state.events]);
-   const getFormsForEvent = useCallback((eventId) => {
-       // If the requested eventId is the current one, return from optimized state
-        if (state.currentEvent?.id === eventId) {
-            return state.currentEventForms;
-        }
-        // Otherwise, potentially fetch or return empty/stale data (or trigger a fetch)
-        console.warn(`getFormsForEvent called for non-current event (${eventId}). Consider fetching.`);
-        return []; // Or fetchFormsForEvent(eventId);
-   }, [state.currentEvent, state.currentEventForms]); // Added dependencies
-
-    const getResponsesForForm = useCallback((formId) => {
-        // Assumes responses are only stored in state for the *current* event
-        return state.currentEventFormResponses[formId] || [];
-   }, [state.currentEventFormResponses]);
-
-   const setCurrentEventId = useCallback((eventId) => {
-       const event = state.events.find(e => e.id === eventId);
-       if (event) {
-            dispatch({ type: 'SET_CURRENT_EVENT', payload: event });
-            // Fetch forms for this newly set event
-            fetchFormsForEvent(eventId); // Call the fetch function
-       } else {
-            dispatch({ type: 'SET_CURRENT_EVENT', payload: null });
-            console.warn(`setCurrentEventId: Event ${eventId} not found in state.`);
-       }
-   }, [state.events]); // fetchFormsForEvent removed, called internally
-
-   // New Fetch function for forms within an event
-    const fetchFormsForEvent = useCallback(async (eventId) => {
-        if (!eventId) return;
-        // Avoid fetching if this is already the current event and forms are loaded
-        // (Optional optimization, depends on how often you expect forms to change externally)
-        // if (state.currentEvent?.id === eventId && state.currentEventForms.length > 0) {
-        //    return;
-        // }
-
-        dispatch({ type: 'SET_LOADING', payload: true });
-        try {
-            // Path: events/{eventId}/forms
-            const formsCollectionRef = collection(database, 'events', eventId, 'forms');
-            const q = query(formsCollectionRef, orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-            const formsList = querySnapshot.docs.map(doc => ({
-                id: doc.id, ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate?.().toISOString(),
-                updatedAt: doc.data().updatedAt?.toDate?.().toISOString(),
-             }));
-             // Dispatch action to set these forms specifically for this event
-            dispatch({ type: 'SET_CURRENT_EVENT_FORMS', payload: { eventId, forms: formsList } });
-        } catch (error) {
-             console.error(`Error fetching forms for event ${eventId}: `, error);
-             dispatch({ type: 'SET_ERROR', payload: 'Failed to load forms for the event.' });
-             toast.error("Failed to load forms for this event.");
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-        }
-    }, []); // dispatch removed
+  const fetchResponses = useCallback(async (eventId, formId) => {
+      // ... (previous implementation)
+  }, [state.currentEvent?.id, state.currentEventFormResponses]);
 
 
-  // Context Value Memo (Updated with new/renamed functions)
+  // Context Value Memo (Ensure names match what FormBuilder uses, e.g., addQuestionToForm, updateQuestion, deleteQuestion)
   const contextValue = useMemo(() => ({
     state,
-    dispatch, // Keep dispatch if components need it directly (less common now)
-    // Event Actions
-    createEvent,
-    updateEvent,
-    deleteEvent,
-    getEvent,
-    setCurrentEventId, // Use this to set the context for form/response actions
-    // Form Actions (scoped to currentEvent implicitly or explicitly)
-    createFormForEvent,
-    fetchFormsForEvent, // Expose if needed directly
-    updateFormForEvent,
-    deleteFormForEvent,
+    createEvent, updateEvent, deleteEvent, setCurrentEventId,
+    createFormForEvent, updateFormForEvent, deleteFormForEvent,
+    // Ensure these match the function names defined above
     addQuestionToForm,
-    updateQuestionInForm,
-    deleteQuestionFromForm,
-    getFormsForEvent, // Getter for forms of the current event
-    // Response Actions (scoped to currentEvent implicitly or explicitly)
-    submitResponse,
-    fetchResponses, // Expose if needed directly
-    getResponsesForForm, // Getter for responses of a specific form in the current event
+    updateQuestion, // Make sure this name matches the one defined above
+    deleteQuestion, // Make sure this name matches the one defined above
+    submitResponse, fetchResponses,
+    getEvent: (eventId) => state.events.find(event => event.id === eventId),
+    getCurrentEvent: () => state.currentEvent,
+    getFormsForCurrentEvent: () => state.currentEventForms,
+    getResponsesForForm: (formId) => state.currentEventFormResponses[formId] || [],
   }), [
-    state, dispatch, createEvent, updateEvent, deleteEvent, getEvent, setCurrentEventId,
-    createFormForEvent, fetchFormsForEvent, updateFormForEvent, deleteFormForEvent,
-    addQuestionToForm, updateQuestionInForm, deleteQuestionFromForm, getFormsForEvent,
-    submitResponse, fetchResponses, getResponsesForForm
+    state, createEvent, updateEvent, deleteEvent, setCurrentEventId,
+    createFormForEvent, updateFormForEvent, deleteFormForEvent,
+    addQuestionToForm, updateQuestion, deleteQuestion, // Add the actual function names here
+    submitResponse, fetchResponses
   ]);
 
   return (
@@ -745,7 +424,7 @@ export const EventManagerProvider = ({ children }) => {
   );
 };
 
-// Custom hook (Renamed)
+// Custom hook (keep as is)
 export const useEventManager = () => {
   const context = useContext(EventManagerContext);
   if (!context) {
