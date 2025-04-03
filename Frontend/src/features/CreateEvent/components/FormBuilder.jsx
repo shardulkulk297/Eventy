@@ -1,5 +1,5 @@
 /* src/features/CreateEvent/components/FormBuilder.jsx */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/ui/button';
 import { QuestionCard, AddQuestionButton } from '@/features/CreateEvent/components/QuestionTypes';
@@ -8,6 +8,7 @@ import PageTransition from './PageTransition';
 import { Eye, ArrowLeft, Settings, Palette, AlertCircle, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/shared/ui/input';
+import { Textarea } from '@/shared/ui/textarea';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -26,7 +27,7 @@ function debounce(func, wait) {
 }
 
 const FormBuilder = () => {
-  const { eventId, formId } = useParams();
+  const { eventId, formId: formIdFromUrl } = useParams();
   const navigate = useNavigate();
   const {
     state,
@@ -100,7 +101,6 @@ const FormBuilder = () => {
 
   }, [eventId, currentEvent?.id, contextLoading, contextError, setCurrentEventId, navigate]);
   // **Removed pageLoading from dependency array to fix infinite loop**
-
 
   // Effect 2: Handle finding existing form or triggering creation for 'new'
   useEffect(() => {
@@ -285,7 +285,9 @@ const FormBuilder = () => {
     }
     console.log(`handleAddQuestion: Type=${type} for form ${currentFormLocal.id}`);
     const newQuestionBase = {
-      type, title: 'Untitled Question', required: false,
+      type,
+      title: 'Untitled Question',
+      required: false,
       options: (type === 'multiple_choice' || type === 'checkbox' || type === 'dropdown')
         ? [{ id: `opt-${Date.now()}-${Math.random().toString(16).slice(2)}`, value: 'Option 1' }] : undefined
     };
@@ -325,7 +327,7 @@ const FormBuilder = () => {
 
   // --- Navigation ---
   const handleGoBack = () => {
-     navigate(`/posts/events/${eventId}/forms`);
+    navigate(`/posts/events/${eventId}/forms`);
   };
 
   const handlePreview = () => {
@@ -352,14 +354,21 @@ const FormBuilder = () => {
           </header>
           {/* Body Skeleton */}
           <div className="max-w-screen-md mx-auto pt-8 px-4">
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6">
-                 <div className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 space-y-3">
-                      <Skeleton className="h-7 w-3/4 rounded-md" /> <Skeleton className="h-4 w-full rounded-md" /> <Skeleton className="h-4 w-5/6 rounded-md" />
-                 </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6">
+              <div className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 space-y-3">
+                <Skeleton className="h-7 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-5/6 rounded-md" />
               </div>
-              <div className="space-y-4"> <Skeleton className="h-40 w-full rounded-lg" /> <Skeleton className="h-40 w-full rounded-lg" /> </div>
-              <div className="relative mt-6 flex justify-center"> <Skeleton className="h-10 w-36 rounded-full" /> </div>
-           </div>
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-40 w-full rounded-lg" />
+              <Skeleton className="h-40 w-full rounded-lg" />
+            </div>
+            <div className="relative mt-6 flex justify-center">
+              <Skeleton className="h-10 w-36 rounded-full" />
+            </div>
+          </div>
         </div>
       </PageTransition>
     );
@@ -438,11 +447,11 @@ const FormBuilder = () => {
 
       {/* Builder Area */}
       <div className="max-w-screen-md mx-auto pt-8 px-4">
-        {/* Form Title/Description Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6"
+          onClick={() => setSelectedQuestionId(null)}
         >
           <div className="border-l-4 border-primary pl-4">
             <Input
